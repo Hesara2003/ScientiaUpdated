@@ -4,7 +4,7 @@ import axios from 'axios';
 const token = localStorage.getItem('token');
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://51.21.202.228:8080',
+  baseURL: import.meta.env.VITE_API_URL || 'https://51.21.202.228:8080',
   headers: {
     'Content-Type': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
