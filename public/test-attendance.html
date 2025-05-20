@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance API Test</title>
+    <script type="module">
+        import testAttendanceEndpoint from './src/services/test-attendance.js';
+        
+        window.runTest = async function() {
+            const result = await testAttendanceEndpoint();
+            document.getElementById('result').textContent = JSON.stringify(result, null, 2);
+        };
+    </script>
+</head>
+<body>
+    <h1>Attendance API Test</h1>
+    <button onclick="runTest()">Test Attendance Endpoint</button>
+    <pre id="result" style="margin-top: 20px; padding: 10px; background-color: #f0f0f0;"></pre>
+</body>
+</html>
