@@ -3,8 +3,26 @@ import axios from 'axios';
 // Initialize with token if available
 const token = localStorage.getItem('token');
 
+// Function to determine correct baseURL for different environments
+const getBaseURL = () => {
+  // Use environment variable if defined
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // For production (Vercel) we need to use a relative URL to avoid mixed content
+  if (window.location.protocol === 'https:') {
+    // Using a relative URL will make requests relative to the current domain
+    // This approach requires proper CORS setup on backend and proxy configuration in Vercel
+    return '/api';
+  }
+  
+  // For local development over HTTP, use direct URL
+  return 'http://16.171.173.27:8080';
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://16.171.173.27:8080',
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
