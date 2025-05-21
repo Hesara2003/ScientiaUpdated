@@ -4,7 +4,7 @@ import axios from 'axios';
 const token = localStorage.getItem('token');
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://8e4a-16-171-173-27.ngrok-free.app',
+  baseURL: import.meta.env.VITE_API_URL || 'https://339e-16-171-173-27.ngrok-free.app',
   headers: {
     'Content-Type': 'application/json',
     'ngrok-skip-browser-warning': 'true',
