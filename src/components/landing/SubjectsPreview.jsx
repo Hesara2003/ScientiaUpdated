@@ -118,14 +118,14 @@ const SubjectsPreview = ({ subjects = [], classes = [], loading = false, getClas
         >
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium mb-4">
             <span className="mr-2">📚</span>
-            Comprehensive Learning
+            විස්තීරණ ඉගෙනීම
           </div>
           <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-            Popular Subjects
+            ජනප්‍රිය විෂයයන්
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Discover our most popular subjects with expert tutors, comprehensive course materials, 
-            and interactive learning experiences
+            විශේෂඥ උපදේශකයින්, පුළුල් පාඨමාලා, 
+සහ අන්තර්ක්‍රියාකාරී ඉගෙනුම් අත්දැකීම් සමඟ අපගේ වඩාත් ජනප්‍රිය විෂයයන් සොයා ගන්න.
           </p>
         </motion.div>
 
@@ -264,10 +264,12 @@ const SubjectsPreview = ({ subjects = [], classes = [], loading = false, getClas
         >
           <div className="bg-white/80 backdrop-blur-lg rounded-3xl p-8 shadow-xl border border-white/20 max-w-2xl mx-auto">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Ready to Start Learning?
+              
+ඉගෙනීම ආරම්භ කිරීමට සූදානම්ද?
+
             </h3>
             <p className="text-gray-600 mb-6">
-              Explore all our subjects and find the perfect courses for your academic journey
+             අපගේ සියලුම විෂයයන් ගවේෂණය කර ඔබේ අධ්‍යයන ගමනට සුදුසු පරිපූර්ණ පාඨමාලා සොයා ගන්න.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.button
@@ -277,7 +279,7 @@ const SubjectsPreview = ({ subjects = [], classes = [], loading = false, getClas
                 className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group"
               >
                 <span className="mr-2">🚀</span>
-                View All Subjects
+                සියලුම විෂයයන් බලන්න
                 <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
@@ -288,7 +290,7 @@ const SubjectsPreview = ({ subjects = [], classes = [], loading = false, getClas
                 onClick={() => navigate('/auth/register')}
                 className="inline-flex items-center px-8 py-3 border-2 border-indigo-200 text-indigo-600 font-semibold rounded-2xl hover:bg-indigo-50 transition-all duration-300"
               >
-                Get Started Free
+                නොමිලේ ආරම්භ කරන්න
               </motion.button>
             </div>
           </div>

@@ -103,6 +103,9 @@ import TutorialDetail from "./pages/student/tutorials/TutorialDetail";
 import TuteListParent from "./pages/parent/tutorials/TuteListParent";
 import ChildTutorials from "./pages/parent/tutorials/ChildTutorials";
 
+import RecordingsStudent from '../src/pages/student/Recordings';
+
+
 // App Routes component using the auth context
 const AppRoutes = () => {
   const { user, isAuthenticated } = useAuth();
@@ -228,6 +231,7 @@ const AppRoutes = () => {
         <Route path="" element={<StudentHome />} />
         <Route path="courses" element={<StudentCourses />} />
         <Route path="attendance" element={<StudentAttendance />} />
+        <Route path="recordings" element={<RecordingsStudent />} />
         <Route path="exams" element={<StudentExams />} />
         <Route path="progress" element={<StudentProgress />} />
         <Route path="fee-reminders" element={<StudentFeeReminders />} />
