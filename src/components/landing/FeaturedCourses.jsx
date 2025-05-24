@@ -7,11 +7,11 @@ const FeaturedCourses = ({ classes, loading, containerVariants, itemVariants }) 
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   const categories = [
-    { id: 'all', name: 'All Courses', icon: '📚' },
-    { id: 'mathematics', name: 'Mathematics', icon: '🔢' },
-    { id: 'science', name: 'Science', icon: '🔬' },
-    { id: 'languages', name: 'Languages', icon: '🗣️' },
-    { id: 'technology', name: 'Technology', icon: '💻' }
+    { id: 'all', name: 'සියලු පාඨමාලා', icon: '📚' },
+    { id: 'mathematics', name: 'ගණිතය', icon: '🔢' },
+    { id: 'science', name: 'විද්‍යාව', icon: '🔬' },
+    { id: 'languages', name: 'භාෂා', icon: '🗣️' },
+    { id: 'technology', name: 'තාක්ෂණය', icon: '💻' }
   ];
 
   const getDifficultyBadge = (level) => {
@@ -39,13 +39,13 @@ const FeaturedCourses = ({ classes, loading, containerVariants, itemVariants }) 
         >
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium mb-4">
             <span className="mr-2">🎓</span>
-            Premium Learning Experience
+            උසස් ඉගෙනුම් අත්දැකීම
           </div>
           <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-            Featured Courses
+            විශේෂ පාඨමාලා
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Discover our most popular courses taught by industry experts and achieve your learning goals
+            කර්මාන්ත විශේෂඥයින් විසින් උගන්වන අපගේ ජනප්‍රියතම පාඨමාලා සොයා ගන්න සහ ඔබේ ඉගෙනුම් අරමුණු සාක්ෂාත් කර ගන්න
           </p>
         </motion.div>
 
@@ -81,7 +81,7 @@ const FeaturedCourses = ({ classes, loading, containerVariants, itemVariants }) 
               <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200"></div>
               <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-indigo-600 absolute top-0 left-0"></div>
             </div>
-            <p className="mt-4 text-gray-600">Loading amazing courses...</p>
+            <p className="mt-4 text-gray-600">විශිෂ්ට පාඨමාලා පූරණය වෙමින්...</p>
           </div>
         ) : classes.length > 0 ? (
           <motion.div 
@@ -218,16 +218,16 @@ const FeaturedCourses = ({ classes, loading, containerVariants, itemVariants }) 
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">No Courses Available</h3>
-            <p className="text-gray-600 text-lg mb-2">We're working hard to bring you amazing courses.</p>
-            <p className="text-gray-500 mb-8">Please check back later or contact us for more information.</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">පාඨමාලා නොමැත</h3>
+            <p className="text-gray-600 text-lg mb-2">අපි ඔබට විශිෂ්ට පාඨමාලා ලබා දීමට කටයුතු කරමින් සිටිමු.</p>
+            <p className="text-gray-500 mb-8">කරුණාකර පසුව නැවත පරීක්ෂා කරන්න හෝ වැඩි විස්තර සඳහා අප හා සම්බන්ධ වන්න.</p>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/contact')}
               className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-2xl shadow-lg transition-all duration-300"
             >
-              Contact Us
+              අප හා සම්බන්ධ වන්න
             </motion.button>
           </motion.div>
         )}
