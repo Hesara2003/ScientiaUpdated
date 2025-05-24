@@ -132,11 +132,11 @@ export default function LandingPage() {
       />
 
       {/* Exams Section */}
-      <ExamsSection 
+      {/* <ExamsSection 
         exams={exams}
         loading={loading}
         navigate={navigate}
-      />
+      /> */}
 
       {/* Premium Recordings Section */}
       <RecordingsSection 

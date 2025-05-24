@@ -4,16 +4,16 @@ import { motion } from 'framer-motion';
 
 const HeroSection = () => {
   const floatingCards = [
-    { icon: '📚', title: 'Expert Courses', position: 'top-20 left-10' },
-    { icon: '🎯', title: 'Personalized', position: 'top-32 right-16' },
-    { icon: '⭐', title: '5-Star Rated', position: 'bottom-32 left-16' },
-    { icon: '🚀', title: 'Fast Learning', position: 'bottom-20 right-10' }
+    { icon: '📚', title: 'ප්‍රවීණ පාඨමාලා', position: 'top-20 left-10' },
+    { icon: '🎯', title: 'පුද්ගලායනය කළ', position: 'top-32 right-16' },
+    { icon: '⭐', title: 'තරු 5 ශ්‍රේණිගත', position: 'bottom-32 left-16' },
+    { icon: '🚀', title: 'ඉක්මන් ඉගෙනීම', position: 'bottom-20 right-10' }
   ];
 
   const stats = [
-    { number: '10K+', label: 'Students' },
-    { number: '500+', label: 'Courses' },
-    { number: '98%', label: 'Success Rate' }
+    { number: '10K+', label: 'සිසුන්' },
+    { number: '500+', label: 'පාඨමාලා' },
+    { number: '98%', label: 'සාර්ථකත්ව අනුපාතය' }
   ];
 
   return (
@@ -69,7 +69,7 @@ const HeroSection = () => {
             className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium mb-8"
           >
             <span className="mr-2">🎉</span>
-            New courses added every week
+            සෑම සතියකම නව පාඨමාලා එකතු කරයි
           </motion.div>
 
           {/* Main Heading */}
@@ -79,10 +79,10 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
           >
-            Transform Your
+            ඔබගේ අධ්‍යාපන
             <br />
             <span className="bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent">
-              Learning Journey
+              ගමන පරිවර්තනය කරන්න
             </span>
           </motion.h1>
 
@@ -93,8 +93,8 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            Discover expert tutors and engaging courses designed to help you excel academically. 
-            Join thousands of learners who have transformed their careers with Scientia.
+            ඔබට අධ්‍යාපනික වශයෙන් විශිෂ්ට වීමට උපකාර කිරීම සඳහා නිර්මාණය කරන ලද විශේෂඥ ගුරුවරුන් සහ ආකර්ෂණීය පාඨමාලා සොයා ගන්න.
+            Scientia සමඟ ඔවුන්ගේ වෘත්තීය ජීවිතය පරිවර්තනය කර ඇති දහස් ගණන් ඉගෙනුම් ලබන්නන්ට සම්බන්ධ වන්න.
           </motion.p>
 
           {/* Stats */}
@@ -129,7 +129,7 @@ const HeroSection = () => {
                 className="group relative w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-indigo-700 bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
               >
                 <span className="relative z-10 flex items-center">
-                  Get Started Free
+                  නොමිලේ ආරම්භ කරන්න
                   <svg className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
@@ -151,7 +151,7 @@ const HeroSection = () => {
                   <svg className="mr-2 w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V4z" clipRule="evenodd" />
                   </svg>
-                  Explore Courses
+                  පාඨමාලා ගවේෂණය කරන්න
                 </span>
               </Link>
             </motion.div>
@@ -170,11 +170,11 @@ const HeroSection = () => {
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full border-2 border-white"></div>
                 <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-teal-400 rounded-full border-2 border-white"></div>
               </div>
-              Trusted by 10,000+ students
+              සිසුන් 10,000+ විශ්වාස කරයි
             </div>
             <div className="flex items-center text-white/80 text-sm">
               <span className="text-yellow-300 mr-2">⭐⭐⭐⭐⭐</span>
-              4.9/5 rating
+              4.9/5 ශ්‍රේණිගත කිරීම
             </div>
           </motion.div>
 
@@ -186,7 +186,7 @@ const HeroSection = () => {
             transition={{ duration: 0.8, delay: 1 }}
           >
             <div className="flex flex-col items-center text-white/60 py-1">
-              <span className="text-sm mb-2">Scroll to explore</span>
+              <span className="text-sm mb-2">ගවේෂණය කිරීමට අනුචලනය කරන්න</span>
               <motion.div
                 animate={{ y: [0, 8, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}

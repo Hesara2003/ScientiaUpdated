@@ -6,17 +6,17 @@ const AboutSection = () => {
   const navigate = useNavigate();
 
   const stats = [
-    { number: '10,000+', label: 'Students Enrolled' },
-    { number: '500+', label: 'Expert Tutors' },
-    { number: '50+', label: 'Courses Available' },
-    { number: '98%', label: 'Success Rate' }
+    { number: '10,000+', label: 'ලියාපදිංචි සිසුන්' },
+    { number: '500+', label: 'ප්‍රවීණ ගුරු' },
+    { number: '50+', label: 'පවතින පාඨමාලා' },
+    { number: '98%', label: 'සාර්ථකත්ව අනුපාතය' }
   ];
 
   const features = [
-    { icon: '🎯', title: 'Personalized Learning', description: 'Tailored education paths' },
-    { icon: '👨‍🏫', title: 'Expert Tutors', description: 'Industry professionals' },
-    { icon: '⏰', title: 'Flexible Schedules', description: 'Learn at your pace' },
-    { icon: '💬', title: 'Interactive Classes', description: 'Engaging sessions' }
+    { icon: '🎯', title: 'පෞද්ගලික අධ්‍යාපනය', description: 'අභිමූඛ අධ්‍යාපන මාර්ග' },
+    { icon: '👨‍🏫', title: 'ප්‍රවීණ ගුරු', description: 'කාර්මික විශේෂඥයන්' },
+    { icon: '⏰', title: 'සැලකිලිමත් කාලසටහන්', description: 'ඔබේ වේගයට අනුකූලව ඉගෙන ගන්න' },
+    { icon: '💬', title: 'අන්තර්ක්‍රියාකාරී පන්ති', description: 'ඉවහල් සෙෂන්' }
   ];
 
   return (
@@ -35,10 +35,10 @@ const AboutSection = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-            About Scientia
+            Scientia ගැන
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Empowering minds through innovative education and personalized learning experiences
+            නවෝත්පාදන අධ්‍යාපනය සහ පෞද්ගලික අධ්‍යාපන අත්දැකීම් මඟින් මනසන් ශක්තිමත් කිරීම
           </p>
         </motion.div>
 
@@ -67,13 +67,13 @@ const AboutSection = () => {
           >
             <div className="mb-8">
               <h3 className="text-3xl font-bold text-gray-900 mb-6">
-                Transform Your Learning Journey
+                ඔබේ අධ්‍යාපන ගමන පරිවර්තනය කරන්න
               </h3>
               <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                Scientia is a premier educational platform committed to providing high-quality education to students of all ages and backgrounds. Our mission is to make learning accessible, engaging, and effective through innovative teaching methods and cutting-edge technology.
+                Scientia යනු සියලු වයස් සහ පසුබැසීමේ සිසුන් සඳහා උසස් තත්ත්වයේ අධ්‍යාපනය ලබා දීමට කැපවූ ප්‍රමුඛ අධ්‍යාපන වේදිකාවකි. නවෝත්පාදන ඉගැන්වීමේ ක්‍රම සහ නවීන තාක්ෂණය මඟින් ඉගෙනීම පහසු, ආකර්ෂණීය සහ කාර්යක්ෂම කිරීම අපගේ මෙහෙවර වේ.
               </p>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                We offer a diverse range of courses taught by experienced educators who are passionate about student success. Our personalized approach ensures that each student receives the attention and support they need to excel academically and professionally.
+                අපි විවිධ පාඨමාලා පවත්වන අතර, ඒවා ප්‍රවීණ ගුරුවරුන් විසින් ඉගැන්වෙයි. අපගේ පෞද්ගලික ආකාරය සෑම සිසුවෙකුටම විශේෂ අවධානය සහ සහාය ලබා දීමේ සහතිකය ලබා දෙයි.
               </p>
             </div>
 
@@ -106,9 +106,9 @@ const AboutSection = () => {
           >
             <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden border border-white/20">
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6">
-                <h3 className="text-2xl font-bold text-white mb-2">Ready to Get Started?</h3>
+                <h3 className="text-2xl font-bold text-white mb-2">ඉගෙනීම ආරම්භ කිරීමට සූදානම්ද?</h3>
                 <p className="text-blue-100">
-                  Join our growing community of learners today
+                  අදම අපගේ වර්ධනය වන සමාජය සමඟ එකතු වන්න
                 </p>
               </div>
               <div className="p-8">
@@ -119,7 +119,7 @@ const AboutSection = () => {
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <span>Free trial for 7 days</span>
+                    <span>දින 7ක් නොමිලේ පරීක්ෂණයක්</span>
                   </div>
                   <div className="flex items-center space-x-3 text-gray-600">
                     <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
@@ -127,7 +127,7 @@ const AboutSection = () => {
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <span>No credit card required</span>
+                    <span>ණය පතක් අවශ්‍ය නොවේ</span>
                   </div>
                   <div className="flex items-center space-x-3 text-gray-600">
                     <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
@@ -135,7 +135,7 @@ const AboutSection = () => {
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <span>24/7 support available</span>
+                    <span>24/7 සහාය ලබා ගත හැක</span>
                   </div>
                 </div>
                 <div className="space-y-3">
@@ -145,7 +145,7 @@ const AboutSection = () => {
                     onClick={() => navigate('/auth/register')}
                     className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-lg text-white font-semibold transition-all duration-300"
                   >
-                    Start Learning Today
+                    අදම ඉගෙනීම ආරම්භ කරන්න
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.02, backgroundColor: "rgba(99, 102, 241, 0.05)" }}
@@ -153,7 +153,7 @@ const AboutSection = () => {
                     onClick={() => navigate('/auth/login')}
                     className="w-full py-3 px-6 border-2 border-indigo-200 rounded-xl text-indigo-600 font-semibold hover:border-indigo-300 transition-all duration-300"
                   >
-                    Already have an account?
+                    දැනටමත් ගිණුමක් තිබේද?
                   </motion.button>
                 </div>
               </div>

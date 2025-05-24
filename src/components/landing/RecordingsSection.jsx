@@ -153,8 +153,48 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                 >
                   {/* Video Preview Header */}
                   <div className="relative h-56 bg-gradient-to-br from-purple-500 via-blue-600 to-indigo-700 overflow-hidden">
-                    <div className="absolute inset-0 bg-black/30"></div>
+                    {/* Background Image with Fallback */}
+                    {lesson.thumbnail && (
+                      <img 
+                        src={lesson.thumbnail}
+                        alt={lesson.title || 'Course thumbnail'}
+                        className="absolute inset-0 w-full h-full object-cover opacity-30"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    )}
                     
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/80 via-blue-600/80 to-indigo-700/80"></div>
+                    
+                    {/* Pattern Overlay for better visual appeal */}
+                    <div className="absolute inset-0 opacity-10">
+                      <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <defs>
+                          <pattern id={`pattern-${lesson.id || index}`} x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                            <circle cx="10" cy="10" r="1" fill="white" opacity="0.3"/>
+                          </pattern>
+                        </defs>
+                        <rect width="100" height="100" fill={`url(#pattern-${lesson.id || index})`}/>
+                      </svg>
+                    </div>
+                    
+                    {/* Subject Icon as Visual Element */}
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-10">
+                      <div className="text-8xl text-white">
+                        {lesson.subject === 'Mathematics' ? '📐' :
+                         lesson.subject === 'Physics' ? '⚛️' :
+                         lesson.subject === 'Chemistry' ? '🧪' :
+                         lesson.subject === 'Biology' ? '🧬' :
+                         lesson.subject === 'Computer Science' ? '💻' :
+                         lesson.subject === 'Literature' ? '📚' :
+                         lesson.subject === 'History' ? '📜' :
+                         lesson.subject === 'Geography' ? '🗺️' :
+                         '🎓'}
+                      </div>
+                    </div>
+
                     {/* Badges */}
                     <div className="absolute top-4 left-4 flex gap-2">
                       {lesson.bestSeller && (
@@ -228,7 +268,7 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <svg className="w-4 h-4 text-purple-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 7a2 2 0 012-2h10a2 2 0 012 2v2M7 7h10" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2H5a2 2 0 00-2 2v2M7 7h10" />
                         </svg>
                         {lesson.totalLessons || lesson.recordingCount || '30'} Lessons
                       </div>
