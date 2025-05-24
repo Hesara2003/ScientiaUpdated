@@ -24,26 +24,15 @@ export const getAllAttendanceRecords = async () => {
     
     console.log('Fetching attendance records with role:', normalizedRole);
     
-    // Try the endpoint with role parameter first for better compatibility
-    try {
-      const response = await api.get(`${BASE_URL}?role=${normalizedRole}`, { headers });
-      
-      // Check if we have valid data 
-      if (response.status === 200 && response.data && Array.isArray(response.data)) {
-        console.log('Successfully fetched attendance records with role parameter:', response.data.length);
-        return await enhanceAttendanceRecordsWithStudentData(response.data);
-      }
-    } catch (innerError) {
-      console.warn('Failed to fetch with role parameter, trying standard endpoint');
-    }
-    
-    // Fall back to standard endpoint
+    // Try the standard endpoint first
     const response = await api.get(BASE_URL, { headers });
     
     if (response.status === 403) {
       console.warn('Access forbidden (403) when fetching attendance records. Try setting proper role in your account.');
       return [];
     }
+    
+    console.log('Raw attendance response:', response.data);
     
     // Check if we have valid data 
     if (!response.data || !Array.isArray(response.data)) {
@@ -52,9 +41,12 @@ export const getAllAttendanceRecords = async () => {
     }
     
     // Enhance records with student data
-    return await enhanceAttendanceRecordsWithStudentData(response.data);
+    const enhancedRecords = await enhanceAttendanceRecordsWithStudentData(response.data);
+    console.log('Enhanced attendance records:', enhancedRecords);
+    return enhancedRecords;
   } catch (error) {
     console.error('Error fetching attendance records:', error);
+    console.error('Error response:', error.response?.data);
     // Return empty array instead of throwing to prevent component crashes
     return [];
   }
@@ -82,26 +74,23 @@ export const getAttendanceById = async (id) => {
  */
 export const createAttendance = async (attendance) => {
   try {
-    // Make sure the date is properly formatted
-    if (attendance.date && typeof attendance.date === 'string') {
-      // Ensure date is in ISO format
-      if (!attendance.date.includes('T')) {
-        attendance.date = new Date(attendance.date).toISOString().split('T')[0];
-      }
-    }
-    
-    // Add creator ID to request
-    const enhancedAttendance = {
-      ...attendance,
-      createdBy: localStorage.getItem('userId') || undefined
+    // Format the data to match backend expectations
+    const attendanceData = {
+      student: { studentId: attendance.studentId },
+      classEntity: attendance.classId ? { classId: attendance.classId } : null,
+      status: attendance.status || 'Present',
+      date: attendance.date ? new Date(attendance.date).toISOString() : new Date().toISOString(),
+      notes: attendance.notes || ''
     };
     
-    console.log('Sending attendance data to server:', enhancedAttendance);
-    const response = await api.post(BASE_URL, enhancedAttendance);
+    console.log('Sending attendance data to server:', attendanceData);
+    const response = await api.post(BASE_URL, attendanceData);
     
+    console.log('Server response for created attendance:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error creating attendance record:', error);
+    console.error('Error details:', error.response?.data);
     throw error;
   }
 };
@@ -114,7 +103,16 @@ export const createAttendance = async (attendance) => {
  */
 export const updateAttendance = async (id, attendance) => {
   try {
-    const response = await api.put(`${BASE_URL}/${id}`, attendance);
+    // Format the data to match backend expectations
+    const attendanceData = {
+      attendanceId: id,
+      student: { studentId: attendance.studentId },
+      classEntity: attendance.classId ? { classId: attendance.classId } : null,
+      status: attendance.status,
+      date: attendance.date ? new Date(attendance.date).toISOString() : null
+    };
+    
+    const response = await api.put(`${BASE_URL}/${id}`, attendanceData);
     return response.data;
   } catch (error) {
     console.error(`Error updating attendance record ${id}:`, error);
@@ -143,8 +141,15 @@ export const deleteAttendance = async (id) => {
  */
 export const bulkCreateAttendance = async (attendanceRecords) => {
   try {
-    // This endpoint would need to be implemented on the backend
-    const response = await api.post(`${BASE_URL}/bulk`, attendanceRecords);
+    // Format each record for the backend
+    const formattedRecords = attendanceRecords.map(record => ({
+      student: { studentId: record.studentId },
+      classEntity: record.classId ? { classId: record.classId } : null,
+      status: record.status || 'Present',
+      date: record.date ? new Date(record.date).toISOString() : new Date().toISOString()
+    }));
+    
+    const response = await api.post(`${BASE_URL}/bulk`, formattedRecords);
     return response.data;
   } catch (error) {
     console.error('Error submitting bulk attendance:', error);
@@ -161,7 +166,6 @@ export const bulkCreateAttendance = async (attendanceRecords) => {
  */
 export const getAttendanceStats = async (startDate, endDate, classId = null) => {
   try {
-    // This endpoint would need to be implemented on the backend
     const url = classId 
       ? `${BASE_URL}/stats?startDate=${startDate}&endDate=${endDate}&classId=${classId}`
       : `${BASE_URL}/stats?startDate=${startDate}&endDate=${endDate}`;
@@ -191,32 +195,47 @@ const enhanceAttendanceRecordsWithStudentData = async (records) => {
     
     // Process all records asynchronously
     const enhancedRecords = await Promise.all(records.map(async (record) => {
-      if (!record.studentId) {
+      // Extract studentId from the nested student object or direct property
+      const studentId = record.student?.studentId || record.studentId;
+      
+      if (!studentId) {
         console.warn('Attendance record missing studentId:', record);
-        return record;
+        return {
+          ...record,
+          studentId: null,
+          student: null,
+          studentName: 'Unknown Student'
+        };
       }
       
       try {
         // Check if we already fetched this student
-        if (!studentCache.has(record.studentId)) {
-          const studentData = await getStudentById(record.studentId);
-          studentCache.set(record.studentId, studentData);
+        if (!studentCache.has(studentId)) {
+          const studentData = await getStudentById(studentId);
+          studentCache.set(studentId, studentData);
         }
         
-        const student = studentCache.get(record.studentId);
+        const student = studentCache.get(studentId);
         
         // Return enhanced record with student data
         return {
           ...record,
+          studentId: studentId,
           student: student,
-          studentName: student ? `${student.firstName} ${student.lastName}` : 'Unknown Student'
+          studentName: student ? `${student.firstName} ${student.lastName}` : `Student #${studentId}`,
+          // Add class information if available
+          classId: record.classEntity?.classId || record.classId,
+          className: record.classEntity?.className || null
         };
       } catch (err) {
-        console.warn(`Could not fetch student data for ID ${record.studentId}:`, err);
+        console.warn(`Could not fetch student data for ID ${studentId}:`, err);
         return {
           ...record,
+          studentId: studentId,
           student: null,
-          studentName: `Student #${record.studentId}`
+          studentName: `Student #${studentId}`,
+          classId: record.classEntity?.classId || record.classId,
+          className: record.classEntity?.className || null
         };
       }
     }));

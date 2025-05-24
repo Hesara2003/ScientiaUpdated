@@ -3,7 +3,7 @@ import { login as loginService, logout as logoutService, initAuth, getCurrentUse
 import { getUserRole, formatAuthError } from '../utils/authUtils';
 
 // Create auth context
-const AuthContext = createContext();
+const AuthContext = React.createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -174,3 +174,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+export default AuthContext;

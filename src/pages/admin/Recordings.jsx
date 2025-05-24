@@ -1,221 +1,141 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { 
-  getAllRecordedLessons, 
+  getAllRecordedLessons,
   addRecordedLesson,
   deleteRecordedLesson,
-  searchLessons,
-  getLessonsBySubjectId
-} from "../../services/recordedLessonService";
-import { getAllTutors } from "../../services/tutorService";
-import { getAllSubjects } from "../../services/subjectService";
-import { toast } from "react-hot-toast";
+  getRecordedLessonById
+} from '../../services/recordedLessonService';
+import { toast } from 'react-hot-toast';
 
 export default function Recordings() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [recordings, setRecordings] = useState([]);
-  const [materials, setMaterials] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterSubject, setFilterSubject] = useState("all");
-  const [filterType, setFilterType] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRecording, setSelectedRecording] = useState(null);
+  const [error, setError] = useState(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  const [uploadType, setUploadType] = useState("recording");
-  const [tutors, setTutors] = useState([]);
-  const [subjects, setSubjects] = useState([]);
   const [uploadData, setUploadData] = useState({
-    title: "",
-    description: "",
-    subjectId: "",
-    tutorId: "",
-    recordingDate: "",
-    type: "video", 
-    videoUrl: "",
-    thumbnailUrl: "",
-    isPublic: true
+    title: '',
+    description: '',
+    videoUrl: ''
   });
 
-  useEffect(() => {
-    fetchData();
-  }, [filterSubject]);
+  // Function to extract thumbnail from video URL
+  const getVideoThumbnail = (url) => {
+    if (!url) return null;
 
-  // Fetch all necessary data
-  const fetchData = async () => {
+    // YouTube thumbnail extraction
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const youtubeMatch = url.match(youtubeRegex);
+    if (youtubeMatch) {
+      return `https://img.youtube.com/vi/${youtubeMatch[1]}/maxresdefault.jpg`;
+    }
+
+    // Vimeo thumbnail extraction
+    const vimeoRegex = /(?:vimeo\.com\/)(\d+)/;
+    const vimeoMatch = url.match(vimeoRegex);
+    if (vimeoMatch) {
+      // For Vimeo, we'll use a placeholder or you could implement Vimeo API call
+      return `https://vumbnail.com/${vimeoMatch[1]}.jpg`;
+    }
+
+    // For other video URLs, return null to show placeholder
+    return null;
+  };
+
+  // Component for video thumbnail with fallback
+  const VideoThumbnail = ({ videoUrl, title, height = "h-48" }) => {
+    const [thumbnailError, setThumbnailError] = useState(false);
+    const [thumbnailLoading, setThumbnailLoading] = useState(true);
+    const thumbnailUrl = getVideoThumbnail(videoUrl);
+
+    const handleThumbnailError = () => {
+      setThumbnailError(true);
+      setThumbnailLoading(false);
+    };
+
+    const handleThumbnailLoad = () => {
+      setThumbnailLoading(false);
+    };
+
+    if (!thumbnailUrl || thumbnailError) {
+      return (
+        <div className={`w-full ${height} bg-gray-200 flex items-center justify-center`}>
+          <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+      );
+    }
+
+    return (
+      <div className={`relative w-full ${height}`}>
+        {thumbnailLoading && (
+          <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
+          </div>
+        )}
+        <img
+          src={thumbnailUrl}
+          alt={title}
+          className={`w-full ${height} object-cover ${thumbnailLoading ? 'opacity-0' : 'opacity-100'} transition-opacity`}
+          onError={handleThumbnailError}
+          onLoad={handleThumbnailLoad}
+        />
+      </div>
+    );
+  };
+
+  // Fetch all recorded lessons
+  useEffect(() => {
+    fetchRecordings();
+  }, []);
+
+  const fetchRecordings = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Fetch subjects and tutors for form dropdowns
-      const [subjectsData, tutorsData] = await Promise.all([
-        getAllSubjects(),
-        getAllTutors()
-      ]);
-      
-      // Make sure subjects are in the right format (array of strings or objects with name property)
-      const formattedSubjects = subjectsData ? 
-        subjectsData.map(subject => typeof subject === 'object' ? subject.name : subject) : 
-        [];
-      
-      setSubjects(formattedSubjects);
-      setTutors(tutorsData || []);
-      
-      // Fetch recordings based on filter
-      await fetchRecordings();
+      const lessons = await getAllRecordedLessons();
+      setRecordings(lessons);
     } catch (err) {
-      console.error("Error fetching data:", err);
-      setError("Failed to load data. Please try again later.");
-      // Use mock data as fallback
-      setSubjects([
-        { id: 1, name: "Mathematics" },
-        { id: 2, name: "Physics" },
-        { id: 3, name: "Chemistry" },
-        { id: 4, name: "Biology" },
-        { id: 5, name: "Computer Science" }
-      ]);
-      setTutors([
-        { id: 1, name: "Dr. Smith" },
-        { id: 2, name: "Prof. Johnson" },
-        { id: 3, name: "Dr. Williams" }
-      ]);
+      console.error('Error fetching recordings:', err);
+      setError('Failed to load recordings. Please try again later.');
+      toast.error('Failed to load recordings');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Fetch recordings based on filters
-  const fetchRecordings = async () => {
-    try {
-      let recordingsData;
-      
-      if (searchQuery.trim()) {
-        // If search query exists, use search function
-        recordingsData = await searchLessons(searchQuery);
-      } else if (filterSubject !== 'all') {
-        // If subject filter is active
-        const subjectId = subjects.find(s => s.name === filterSubject)?.id;
-        if (subjectId) {
-          recordingsData = await getLessonsBySubjectId(subjectId);
-        } else {
-          recordingsData = await getAllRecordedLessons();
-        }
-      } else {
-        // Default: get all recordings
-        recordingsData = await getAllRecordedLessons();
-      }
-      
-      setRecordings(recordingsData);
-    } catch (err) {
-      console.error("Error fetching recordings:", err);
-      setError("Failed to load recordings.");
-      // Fallback to mock data
-      setRecordings([
-        {
-          id: 1,
-          title: "Introduction to Calculus",
-          description: "Fundamental concepts of limits, derivatives and integrals",
-          subjectId: 1,
-          subject: "Mathematics",
-          tutorId: 1,
-          tutor: "Dr. Smith",
-          recordingDate: "2025-04-10",
-          uploadDate: "2025-04-11",
-          duration: "1:15:20",
-          type: "Video",
-          videoUrl: "https://example.com/recordings/calculus-intro.mp4",
-          thumbnailUrl: "https://placehold.co/600x400/3b82f6/ffffff?text=Calculus",
-          views: 145,
-          isPublic: true
-        },
-        {
-          id: 2,
-          title: "Newton's Laws of Motion",
-          description: "Detailed explanation of all three laws with examples",
-          subjectId: 2,
-          subject: "Physics",
-          tutorId: 2,
-          tutor: "Dr. Johnson",
-          recordingDate: "2025-04-08",
-          uploadDate: "2025-04-09",
-          duration: "52:40",
-          type: "Video",
-          videoUrl: "https://example.com/recordings/newton-laws.mp4",
-          thumbnailUrl: "https://placehold.co/600x400/8b5cf6/ffffff?text=Physics",
-          views: 120,
-          isPublic: false
-        },
-        {
-          id: 3,
-          title: "Organic Chemistry Basics",
-          description: "Introduction to organic compounds and nomenclature",
-          subjectId: 3,
-          subject: "Chemistry",
-          tutorId: 3,
-          tutor: "Prof. Williams",
-          recordingDate: "2025-04-05",
-          uploadDate: "2025-04-07",
-          duration: "1:05:15",
-          type: "Video",
-          videoUrl: "https://example.com/recordings/organic-chem.mp4",
-          thumbnailUrl: "https://placehold.co/600x400/10b981/ffffff?text=Chemistry",
-          views: 98,
-          isPublic: true
-        },
-        {
-          id: 4,
-          title: "Introduction to Web Development",
-          description: "HTML, CSS and JavaScript basics",
-          subjectId: 5,
-          subject: "Computer Science",
-          tutorId: 5,
-          tutor: "Mr. Brown",
-          recordingDate: "2025-04-12",
-          uploadDate: "2025-04-13",
-          duration: "1:30:00",
-          type: "Video",
-          videoUrl: "https://example.com/recordings/web-dev.mp4",
-          thumbnailUrl: "https://placehold.co/600x400/6366f1/ffffff?text=WebDev",
-          views: 210,
-          isPublic: true
-        }
-      ]);
     }
   };
 
   // Handle adding a new recording
   const handleAddRecording = async () => {
     try {
-      // Ensure required fields are filled
-      if (!uploadData.title || !uploadData.description || !uploadData.subjectId || !uploadData.tutorId) {
-        toast.error('Please fill all required fields');
+      if (!uploadData.title || !uploadData.videoUrl) {
+        toast.error('Please fill in at least title and video URL');
         return;
       }
-      
-      setLoading(true);
-      
-      // Call API to add recorded lesson
-      const newRecording = await addRecordedLesson(uploadData);
-      
-      // Update state with new recording
-      setRecordings([newRecording, ...recordings]);
-      
-      // Reset form
+
+      const lessonData = {
+        title: uploadData.title,
+        description: uploadData.description,
+        videoUrl: uploadData.videoUrl,
+        uploadDate: new Date().toISOString()
+      };
+
+      await addRecordedLesson(lessonData);
+      toast.success('New recording added successfully!');
+      setUploadModalOpen(false);
       setUploadData({
-        title: "",
-        description: "",
-        subjectId: "",
-        tutorId: "",
-        recordingDate: "",
-        type: "video", 
-        videoUrl: "",
-        thumbnailUrl: "",
-        isPublic: true
+        title: '',
+        description: '',
+        videoUrl: ''
       });
       
-      setUploadModalOpen(false);
-      toast.success('Recording added successfully');
+      // Refresh the recordings list
+      fetchRecordings();
     } catch (err) {
-      console.error('Error adding recording:', err);
+      console.error('Error adding new recording:', err);
       toast.error('Failed to add recording. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -230,846 +150,417 @@ export default function Recordings() {
       toast.success('Recording deleted successfully');
       // Remove from state
       setRecordings(recordings.filter(rec => rec.id !== id));
+      if (selectedRecording && selectedRecording.id === id) {
+        setSelectedRecording(null);
+      }
     } catch (err) {
       console.error('Error deleting recording:', err);
       toast.error('Failed to delete recording. Please try again.');
     }
   };
-  
-  // Function to fetch materials
-  const fetchMaterials = async () => {
-    try {
-      // In a real app, you would fetch from an API
-      // const materialsResponse = await axios.get("http://localhost:8080/study-materials");
-      // setMaterials(materialsResponse.data);
-      
-      // For now, using mock data
-      setMaterials([
-        {
-          id: 1,
-          title: "Calculus Formula Sheet",
-          description: "Comprehensive formula sheet for calculus",
-          subject: "Mathematics",
-          course: "Advanced Mathematics",
-          tutor: "Dr. Smith",
-          uploadDate: "2025-04-02",
-          type: "Document",
-          fileType: "PDF",
-          size: "1.2 MB",
-          url: "https://example.com/materials/calculus-formulas.pdf",
-          thumbnail: "https://placehold.co/600x400/3b82f6/ffffff?text=PDF",
-          downloads: 87,
-          accessLevel: "all"
-        },
-        {
-          id: 2,
-          title: "Physics Problem Set",
-          description: "Practice problems for Newton's Laws",
-          subject: "Physics",
-          course: "Physics for Engineers",
-          tutor: "Dr. Johnson",
-          uploadDate: "2025-04-08",
-          type: "Document",
-          fileType: "PDF",
-          size: "2.4 MB",
-          url: "https://example.com/materials/physics-problems.pdf",
-          thumbnail: "https://placehold.co/600x400/8b5cf6/ffffff?text=PDF",
-          downloads: 65,
-          accessLevel: "all"
-        }
-      ]);
-    } catch (err) {
-      console.error("Error fetching materials:", err);
-      setError("Failed to load materials.");
-    }
+
+  // Filter recordings
+  const filteredRecordings = recordings.filter(recording => 
+    recording.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    recording.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Format date display
+  const formatDate = (dateString) => {
+    if (!dateString) return 'No date';
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // Main useEffect to load initial data
-  useEffect(() => {
-    fetchData();
-    fetchMaterials();
-  }, []);
-
-  const combinedContent = [
-    ...recordings.map(r => ({ 
-      ...r, 
-      contentCategory: 'recording',
-      // Normalize properties
-      thumbnail: r.thumbnailUrl || r.thumbnail,
-      url: r.videoUrl || r.url 
-    })), 
-    ...materials.map(m => ({ ...m, contentCategory: 'material' }))
-  ].sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
-
-  const filteredContent = combinedContent.filter(item => {
-    // Filter by search query
-    if (searchQuery && !item.title?.toLowerCase().includes(searchQuery.toLowerCase()) && 
-        !item.description?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !item.tutor?.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    
-    // Filter by subject
-    if (filterSubject !== "all" && item.subject !== filterSubject) {
-      return false;
-    }
-    
-    // Filter by type
-    if (filterType !== "all") {
-      if (filterType === "recordings" && item.contentCategory !== "recording") {
-        return false;
-      }
-      if (filterType === "materials" && item.contentCategory !== "material") {
-        return false;
-      }
-      if (!["recordings", "materials"].includes(filterType) && item.type !== filterType) {
-        return false;
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
       }
     }
-    
-    return true;
-  });
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setUploadData({ ...uploadData, file });
-    }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setUploadData({ ...uploadData, [name]: value });
-  };
-
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    
-    try {
-      setLoading(true);
-      
-      const newItem = {
-        id: Date.now(),
-        title: uploadData.title,
-        description: uploadData.description,
-        subject: uploadData.subject,
-        course: uploadData.course,
-        tutor: uploadData.tutor,
-        recordingDate: uploadData.recordingDate || new Date().toISOString().split('T')[0],
-        uploadDate: new Date().toISOString().split('T')[0],
-        type: uploadData.type,
-        accessLevel: uploadData.accessLevel,
-        url: uploadData.url || (uploadData.file ? URL.createObjectURL(uploadData.file) : ''),
-      };
-      
-      if (uploadType === "recording") {
-        newItem.duration = "0:00";
-        newItem.thumbnail = `https://placehold.co/600x400/3b82f6/ffffff?text=${uploadData.title}`;
-        newItem.views = 0;
-        setRecordings([newItem, ...recordings]);
-      } else {
-        newItem.fileType = uploadData.file ? uploadData.file.name.split('.').pop().toUpperCase() : "PDF";
-        newItem.size = uploadData.file ? `${Math.round(uploadData.file.size / 1024 / 1024 * 10) / 10} MB` : "1.0 MB";
-        newItem.thumbnail = `https://placehold.co/600x400/10b981/ffffff?text=${newItem.fileType}`;
-        newItem.downloads = 0;
-        setMaterials([newItem, ...materials]);
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 80
       }
-      
-      setUploadData({
-        title: "",
-        description: "",
-        subject: "",
-        course: "",
-        tutor: "",
-        recordingDate: "",
-        type: uploadType === "recording" ? "Video" : "Document",
-        accessLevel: "all",
-        file: null,
-        url: ""
-      });
-      
-      setUploadModalOpen(false);
-      toast.success(`${uploadType === "recording" ? "Recording" : "Material"} added successfully`);
-      
-    } catch (err) {
-      console.error("Error uploading:", err);
-      toast.error("Upload failed. Please try again.");
-    } finally {
-      setLoading(false);
     }
   };
 
-  const getContentIcon = (type) => {
-    switch (type.toLowerCase()) {
-      case 'video':
-        return (
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-          </svg>
-        );
-      case 'document':
-        return (
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-          </svg>
-        );
-      case 'presentation':
-        return (
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
-          </svg>
-        );
-      case 'quiz':
-        return (
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-          </svg>
-        );
-      case 'assignment':
-        return (
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-          </svg>
-        );
-      default:
-        return (
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-          </svg>
-        );
+  const modalVariants = {
+    hidden: { opacity: 0, scale: 0.9 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 25
+      }
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.9,
+      transition: {
+        duration: 0.2
+      }
     }
   };
-
-  const getAccessLevelBadge = (accessLevel) => {
-    switch (accessLevel) {
-      case 'premium':
-        return "bg-yellow-100 text-yellow-800";
-      case 'specific-course':
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-green-100 text-green-800";
-    }
-  };
-
-  if (loading && combinedContent.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-blue-500"></div>
-      </div>
-    );
-  }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Learning Resources</h1>
-        <p className="text-gray-600">Manage class recordings and study materials for students</p>
-      </div>
-
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
-        <div className="flex space-x-2">
-          <button
-            onClick={() => {
-              setUploadType("recording");
-              setUploadModalOpen(true);
-            }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
-          >
-            <svg
-              className="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-              ></path>
-            </svg>
-            Upload Recording
-          </button>
-
-          <button
-            onClick={() => {
-              setUploadType("material");
-              setUploadModalOpen(true);
-            }}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center"
-          >
-            <svg
-              className="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              ></path>
-            </svg>
-            Add Material
-          </button>
-        </div>
-
-        <div className="flex space-x-2">
-          <button
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 flex items-center"
-          >
-            <svg
-              className="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-              ></path>
-            </svg>
-            Manage Access
-          </button>
-
-          <button
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 flex items-center"
-          >
-            <svg
-              className="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-              ></path>
-            </svg>
-            Send Notification
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white shadow-md rounded-lg p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search recordings and materials..."
-                className="w-full border border-gray-300 rounded-md pl-10 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <svg
-                className="w-5 h-5 text-gray-400 absolute left-3 top-2.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                ></path>
-              </svg>
-            </div>
-          </div>
-
-          <div className="w-full md:w-48">
-            <select
-              className="w-full border border-gray-300 rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={filterSubject}
-              onChange={(e) => setFilterSubject(e.target.value)}
-            >
-              <option value="all">All Subjects</option>
-              {subjects.map((subject, index) => (
-                <option key={index} value={typeof subject === 'object' ? subject.name : subject}>
-                  {typeof subject === 'object' ? subject.name : subject}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="w-full md:w-48">
-            <select
-              className="w-full border border-gray-300 rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-            >
-              <option value="all">All Types</option>
-              <option value="recordings">Recordings</option>
-              <option value="materials">Study Materials</option>
-              <option value="Video">Videos</option>
-              <option value="Document">Documents</option>
-              <option value="Presentation">Presentations</option>
-              <option value="Quiz">Quizzes</option>
-              <option value="Assignment">Assignments</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-red-400"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {filteredContent.map((item) => (
-          <div
-            key={`${item.contentCategory}-${item.id}`}
-            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
-          >
-            <div className="relative h-48 overflow-hidden">
-              <img
-                src={item.thumbnail}
-                alt={item.title}
-                className="w-full h-full object-cover"
-              />
-              {item.contentCategory === 'recording' && (
-                <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
-                  {item.duration}
-                </div>
-              )}
-              <div className="absolute top-2 right-2">
-                <span 
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getAccessLevelBadge(item.accessLevel)}`}
-                >
-                  {item.accessLevel === 'all' ? 'All' : item.accessLevel === 'premium' ? 'Premium' : 'Course Only'}
-                </span>
-              </div>
-            </div>
-            
-            <div className="p-4">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-lg font-bold text-gray-800 line-clamp-1">{item.title}</h3>
-                <div 
-                  className={`text-xs px-2 py-1 rounded ${
-                    item.contentCategory === 'recording' 
-                      ? 'bg-blue-100 text-blue-800' 
-                      : 'bg-green-100 text-green-800'
-                  }`}
-                >
-                  {item.contentCategory === 'recording' ? 'Recording' : item.type}
-                </div>
-              </div>
-              
-              <p className="text-sm text-blue-600 mb-1">{item.subject}</p>
-              <p className="text-sm text-gray-600 mb-1">{item.course}</p>
-              <p className="text-sm text-gray-700 mb-4 line-clamp-2">{item.description}</p>
-              
-              <div className="flex justify-between items-center mb-3">
-                <div className="text-sm text-gray-500 flex items-center">
-                  <svg 
-                    className="w-4 h-4 mr-1" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24" 
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                  </svg>
-                  {item.tutor}
-                </div>
-                <div className="text-sm text-gray-500 flex items-center">
-                  <svg 
-                    className="w-4 h-4 mr-1" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24" 
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                  </svg>
-                  {item.contentCategory === 'recording' 
-                    ? new Date(item.recordingDate).toLocaleDateString() 
-                    : new Date(item.uploadDate).toLocaleDateString()}
-                </div>
-              </div>
-              
-              <div className="flex justify-between">
-                <div className="text-sm text-gray-500">
-                  {item.contentCategory === 'recording' 
-                    ? <span>{item.views} views</span>
-                    : <span>{item.downloads} downloads • {item.size}</span>}
-                </div>
-                <div className="flex space-x-2">
-                  <button className="text-blue-600 hover:text-blue-800">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                    </svg>
-                  </button>
-                  <button className="text-red-600 hover:text-red-800">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {filteredContent.length === 0 && (
-          <div className="col-span-full bg-white rounded-lg shadow-md p-6 text-center">
-            <svg
-              className="w-16 h-16 text-gray-300 mx-auto mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-              ></path>
-            </svg>
-            <h3 className="text-lg font-medium text-gray-800 mb-1">No Content Found</h3>
-            <p className="text-gray-600 mb-4">
-              No recordings or materials match your current filters.
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-cyan-50">
+      <div className="px-6 py-8">
+        {/* Enhanced Header */}
+        <motion.header 
+          className="mb-12 text-center"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="relative">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+              Class Recordings
+            </h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Manage and share your class recordings with beautiful previews and easy organization
             </p>
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setFilterSubject("all");
-                setFilterType("all");
-              }}
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Clear Filters
-            </button>
+            
+            {/* Decorative elements */}
+            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full"></div>
           </div>
-        )}
-      </div>
+        </motion.header>
 
-      {uploadModalOpen && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-screen overflow-y-auto">
-            <div className="flex justify-between items-center border-b border-gray-200 px-6 py-4">
-              <h3 className="text-lg font-bold text-gray-800">
-                {uploadType === "recording" ? "Upload Class Recording" : "Add Study Material"}
-              </h3>
-              <button
-                onClick={() => setUploadModalOpen(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  ></path>
-                </svg>
-              </button>
+        {/* Enhanced Search and Action Bar */}
+        <motion.div 
+          className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <div className="relative flex-1 max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
             </div>
-            <form onSubmit={handleUpload}>
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Title
-                    </label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={uploadData.title}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Subject
-                    </label>
-                    <select
-                      name="subject"
-                      value={uploadData.subject}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Select Subject</option>
-                      {subjects.map((subject, index) => (
-                        <option key={index} value={typeof subject === 'object' ? subject.name : subject}>
-                          {typeof subject === 'object' ? subject.name : subject}
-                        </option>
-                      ))}
-                    </select>
+            <input
+              type="text"
+              placeholder="Search recordings..."
+              className="block w-full pl-12 pr-4 py-3 border-0 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg focus:ring-2 focus:ring-cyan-500 focus:bg-white transition-all duration-200 text-gray-900 placeholder-gray-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <motion.button 
+            onClick={() => setUploadModalOpen(true)}
+            className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl font-medium hover:from-cyan-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Add Recording
+          </motion.button>
+        </motion.div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+              <div key={i} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden animate-pulse">
+                <div className="h-48 bg-gradient-to-br from-gray-200 to-gray-300"></div>
+                <div className="p-6">
+                  <div className="h-6 bg-gray-200 rounded-lg w-3/4 mb-3"></div>
+                  <div className="h-4 bg-gray-200 rounded-lg w-full mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded-lg w-2/3 mb-4"></div>
+                  <div className="flex gap-2">
+                    <div className="h-8 bg-gray-200 rounded-lg flex-1"></div>
+                    <div className="h-8 bg-gray-200 rounded-lg w-16"></div>
                   </div>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    name="description"
-                    value={uploadData.description}
-                    onChange={handleInputChange}
-                    rows="3"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  ></textarea>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <motion.div 
+            className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-12 text-center border border-red-100"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <div className="text-red-500 mb-6">
+              <svg className="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Oops! Something went wrong</h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">{error}</p>
+            <button 
+              onClick={fetchRecordings}
+              className="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl font-medium hover:from-red-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-200 shadow-lg"
+            >
+              Try Again
+            </button>
+          </motion.div>
+        ) : (
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {filteredRecordings.length === 0 ? (
+              <motion.div 
+                className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-12 text-center"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+              >
+                <div className="text-gray-400 mb-6">
+                  <svg className="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                  </svg>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Course
-                    </label>
-                    <select
-                      name="course"
-                      value={uploadData.course}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Select Course</option>
-                      {courses
-                        .filter(course => !uploadData.subject || course.subject === uploadData.subject)
-                        .map((course) => (
-                          <option key={course.id} value={course.name}>
-                            {course.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tutor
-                    </label>
-                    <select
-                      name="tutor"
-                      value={uploadData.tutor}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Select Tutor</option>
-                      {tutors
-                        .filter(tutor => !uploadData.subject || tutor.subjects.includes(uploadData.subject))
-                        .map((tutor) => (
-                          <option key={tutor.id} value={tutor.name}>
-                            {tutor.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Content Type
-                    </label>
-                    <select
-                      name="type"
-                      value={uploadData.type}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      {uploadType === "recording" ? (
-                        <option value="Video">Video</option>
-                      ) : (
-                        <>
-                          <option value="Document">Document</option>
-                          <option value="Presentation">Presentation</option>
-                          <option value="Quiz">Quiz</option>
-                          <option value="Assignment">Assignment</option>
-                        </>
-                      )}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Access Level
-                    </label>
-                    <select
-                      name="accessLevel"
-                      value={uploadData.accessLevel}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="all">All Students</option>
-                      <option value="premium">Premium Students</option>
-                      <option value="specific-course">Course Students Only</option>
-                    </select>
-                  </div>
-                </div>
-
-                {uploadType === "recording" && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Recording Date
-                    </label>
-                    <input
-                      type="date"
-                      name="recordingDate"
-                      value={uploadData.recordingDate}
-                      onChange={handleInputChange}
-                      max={new Date().toISOString().split("T")[0]}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Upload Method
-                  </label>
-                  <div className="flex space-x-4">
-                    <div className="flex items-center">
-                      <input
-                        type="radio"
-                        id="file-upload"
-                        name="upload-method"
-                        className="h-4 w-4 text-blue-600"
-                        defaultChecked
-                      />
-                      <label htmlFor="file-upload" className="ml-2 text-sm text-gray-700">
-                        File Upload
-                      </label>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">No recordings yet</h3>
+                <p className="text-gray-600 mb-6 max-w-md mx-auto">Start building your library by adding your first class recording</p>
+                <button
+                  onClick={() => setUploadModalOpen(true)}
+                  className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl font-medium hover:from-cyan-700 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg"
+                >
+                  Add Your First Recording
+                </button>
+              </motion.div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredRecordings.map(recording => (
+                  <motion.div 
+                    key={recording.id}
+                    variants={itemVariants}
+                    className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl overflow-hidden border border-white/20 hover:border-cyan-200 transition-all duration-300"
+                    whileHover={{ y: -5 }}
+                  >
+                    <div className="relative overflow-hidden">
+                      <VideoThumbnail videoUrl={recording.videoUrl} title={recording.title} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <div className="absolute bottom-4 left-4 right-4 flex justify-center">
+                          <button 
+                            onClick={() => setSelectedRecording(recording)}
+                            className="p-3 bg-white/90 backdrop-blur-sm rounded-full text-gray-800 hover:bg-white transform transition-all duration-200 hover:scale-110 shadow-lg"
+                          >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Duration badge */}
+                      <div className="absolute top-3 right-3 px-2 py-1 bg-black/70 backdrop-blur-sm text-white text-xs rounded-lg">
+                        Video
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <input
-                        type="radio"
-                        id="external-url"
-                        name="upload-method"
-                        className="h-4 w-4 text-blue-600"
-                      />
-                      <label htmlFor="external-url" className="ml-2 text-sm text-gray-700">
-                        External URL
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-md border border-dashed border-gray-300">
-                  <div className="text-center">
-                    <svg
-                      className="mx-auto h-12 w-12 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                      ></path>
-                    </svg>
-                    <div className="mt-2">
-                      <label htmlFor="file-upload" className="cursor-pointer">
-                        <span className="mt-2 block text-sm font-medium text-gray-700">
-                          {uploadType === "recording" 
-                            ? "Upload recording video or audio file" 
-                            : "Upload study material file"}
-                        </span>
-                        <input
-                          id="file-upload"
-                          name="file"
-                          type="file"
-                          accept={uploadType === "recording" ? "video/*,audio/*" : "*/*"}
-                          className="sr-only"
-                          onChange={handleFileChange}
-                        />
-                      </label>
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                      {uploadType === "recording" 
-                        ? "MP4, WEBM, MP3 or other video/audio formats" 
-                        : "PDF, DOCX, PPTX or other document formats"}
-                    </p>
-                    {uploadData.file && (
-                      <p className="mt-2 text-sm text-blue-600">
-                        Selected: {uploadData.file.name}
+                    
+                    <div className="p-6">
+                      <h3 className="font-bold text-gray-900 text-lg mb-2 line-clamp-2 group-hover:text-cyan-600 transition-colors">
+                        {recording.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                        {recording.description || 'No description available'}
                       </p>
-                    )}
-                  </div>
-                </div>
+                      
+                      <div className="flex items-center text-xs text-gray-500 mb-4">
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        {formatDate(recording.uploadDate)}
+                      </div>
 
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setSelectedRecording(recording)}
+                          className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-50 to-blue-50 text-cyan-600 rounded-lg hover:from-cyan-100 hover:to-blue-100 text-sm font-medium transition-all duration-200 border border-cyan-200/50"
+                        >
+                          View
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteRecording(recording.id)}
+                          className="px-4 py-2 bg-gradient-to-r from-red-50 to-pink-50 text-red-600 rounded-lg hover:from-red-100 hover:to-pink-100 text-sm font-medium transition-all duration-200 border border-red-200/50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Enhanced Upload Modal */}
+        {uploadModalOpen && (
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div 
+              className="bg-white/95 backdrop-blur-sm rounded-2xl max-w-2xl w-full p-8 shadow-2xl border border-white/20"
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent mb-2">
+                  Add New Recording
+                </h2>
+                <p className="text-gray-600">Share your knowledge with the world</p>
+              </div>
+              
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    External URL (Optional)
-                  </label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Title *</label>
                   <input
-                    type="url"
-                    name="url"
-                    value={uploadData.url}
-                    onChange={handleInputChange}
-                    placeholder="https://example.com/my-recording.mp4"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    type="text"
+                    value={uploadData.title}
+                    onChange={(e) => setUploadData({...uploadData, title: e.target.value})}
+                    className="w-full p-4 border-0 rounded-xl bg-gray-50 focus:ring-2 focus:ring-cyan-500 focus:bg-white transition-all duration-200"
+                    placeholder="Enter an engaging title for your recording"
                   />
                 </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                  <textarea
+                    value={uploadData.description}
+                    onChange={(e) => setUploadData({...uploadData, description: e.target.value})}
+                    className="w-full p-4 border-0 rounded-xl bg-gray-50 focus:ring-2 focus:ring-cyan-500 focus:bg-white transition-all duration-200 resize-none"
+                    rows="4"
+                    placeholder="Describe what students will learn from this recording"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Video URL *</label>
+                  <input
+                    type="url"
+                    value={uploadData.videoUrl}
+                    onChange={(e) => setUploadData({...uploadData, videoUrl: e.target.value})}
+                    className="w-full p-4 border-0 rounded-xl bg-gray-50 focus:ring-2 focus:ring-cyan-500 focus:bg-white transition-all duration-200"
+                    placeholder="https://youtube.com/watch?v=..."
+                  />
+                  <p className="text-sm text-gray-500 mt-2 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Supports YouTube, Vimeo, and other video platforms
+                  </p>
+                </div>
+
+                {uploadData.videoUrl && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Preview</label>
+                    <div className="w-full h-40 border-2 border-dashed border-gray-200 rounded-xl overflow-hidden">
+                      <VideoThumbnail videoUrl={uploadData.videoUrl} title={uploadData.title} height="h-full" />
+                    </div>
+                  </motion.div>
+                )}
               </div>
-              <div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3 border-t border-gray-200">
+              
+              <div className="flex gap-4 mt-8">
                 <button
-                  type="button"
                   onClick={() => setUploadModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+                  className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all duration-200"
                 >
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                  onClick={handleAddRecording}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl font-medium hover:from-cyan-700 hover:to-blue-700 transition-all duration-200 shadow-lg"
                 >
-                  {uploadType === "recording" ? "Upload Recording" : "Add Material"}
+                  Add Recording
                 </button>
               </div>
-            </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="text-center text-sm text-gray-500 mt-8">
-        <p>Showing {filteredContent.length} of {combinedContent.length} resources</p>
+        {/* Enhanced Video Preview Modal */}
+        {selectedRecording && (
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div 
+              className="bg-white/95 backdrop-blur-sm rounded-2xl overflow-hidden max-w-5xl w-full shadow-2xl border border-white/20"
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <div className="relative">
+                <div className="w-full h-96 bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
+                  <div className="w-full h-full">
+                    <VideoThumbnail videoUrl={selectedRecording.videoUrl} title={selectedRecording.title} height="h-full" />
+                  </div>
+                </div>
+                
+                <button 
+                  className="absolute top-6 right-6 bg-black/60 backdrop-blur-sm rounded-full p-3 text-white hover:bg-black/80 transition-all duration-200 group"
+                  onClick={() => setSelectedRecording(null)}
+                >
+                  <svg className="w-6 h-6 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="p-8">
+                <div className="mb-6">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-3">{selectedRecording.title}</h2>
+                  <div className="flex items-center text-sm text-gray-500 mb-4">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <span>{formatDate(selectedRecording.uploadDate)}</span>
+                  </div>
+                  
+                  <p className="text-gray-700 text-lg leading-relaxed">
+                    {selectedRecording.description || 'No description available'}
+                  </p>
+                </div>
+                
+                <div className="flex gap-4">
+                  <a 
+                    href={selectedRecording.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl font-medium hover:from-cyan-700 hover:to-blue-700 transition-all duration-200 shadow-lg flex items-center"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                    </svg>
+                    Watch Video
+                  </a>
+                  <button 
+                    onClick={() => handleDeleteRecording(selectedRecording.id)}
+                    className="px-6 py-3 bg-gradient-to-r from-red-50 to-pink-50 text-red-600 rounded-xl font-medium hover:from-red-100 hover:to-pink-100 transition-all duration-200 border border-red-200/50 flex items-center"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    Delete Recording
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     </div>
   );

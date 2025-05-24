@@ -1,90 +1,64 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getAllClasses, getClassesByTutorId } from '../../services/classService';
+import { getTutor, getTutorClasses } from '../../services/tutorService';
+import { useAuth } from '../../contexts/AuthContext'; // Assuming you have auth context
 
 export default function Classes() {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useAuth(); // Get authenticated user
 
   useEffect(() => {
     const fetchClasses = async () => {
       try {
         setLoading(true);
-        // In a real app, you would get the tutor ID from auth context
-        // For now, we'll use a mock tutor ID
-        const tutorId = 1; // Example tutor ID
-        const data = await getClassesByTutorId(tutorId);
         
-        // If no classes are returned, use mock data
-        if (data && data.length > 0) {
-          setClasses(data);
-        } else {
-          // Mock data for display purposes
-          setClasses([
-            {
-              id: 1,
-              name: 'Advanced Mathematics',
-              subject: 'Mathematics',
-              grade: '11th Grade',
-              schedule: 'Monday, Wednesday, Friday - 09:00-10:30',
-              room: 'Room 101',
-              students: 24,
-              status: 'active',
-              progress: 65,
-              lastClass: '2025-05-14'
-            },
-            {
-              id: 2,
-              name: 'Physics Fundamentals',
-              subject: 'Physics',
-              grade: '10th Grade',
-              schedule: 'Tuesday, Thursday - 11:00-12:30',
-              room: 'Lab 3',
-              students: 18,
-              status: 'active',
-              progress: 42,
-              lastClass: '2025-05-15'
-            },
-            {
-              id: 3,
-              name: 'Chemistry Lab',
-              subject: 'Chemistry',
-              grade: '11th Grade',
-              schedule: 'Monday, Wednesday - 14:00-15:30',
-              room: 'Chemistry Lab 2',
-              students: 16,
-              status: 'active',
-              progress: 78,
-              lastClass: '2025-05-15'
-            },
-            {
-              id: 4,
-              name: 'Biology Advanced',
-              subject: 'Biology',
-              grade: '12th Grade',
-              schedule: 'Friday - 13:00-15:00',
-              room: 'Biology Lab',
-              students: 15,
-              status: 'upcoming',
-              progress: 0,
-              lastClass: null
-            },
-            {
-              id: 5,
-              name: 'Organic Chemistry',
-              subject: 'Chemistry',
-              grade: '12th Grade',
-              schedule: 'Monday, Wednesday - 16:00-17:30',
-              room: 'Chemistry Lab 1',
-              students: 12,
-              status: 'completed',
-              progress: 100,
-              lastClass: '2025-04-30'
-            }
-          ]);
+        let data = [];
+        
+        // If user is authenticated and has tutorId, get their specific classes
+        if (user && user.tutorId) {
+          data = await getTutorClasses(user.tutorId);
+          console.log(`Fetched ${data.length} classes for tutor ID: ${user.tutorId}`);
+        } 
+        // If user doesn't have tutorId but is authenticated, try to get all classes
+        else if (user) {
+          data = await getAllClasses();
+          console.log(`Fetched ${data.length} total classes`);
         }
+        // If no user, don't fetch anything
+        else {
+          console.warn('No authenticated user found');
+          data = [];
+        }
+        
+        // Process classes data - the backend already includes tutor information
+        const classesWithTutorNames = data.map((cls) => {
+          // Check if tutor data is already included from backend
+          if (cls.tutor) {
+            return {
+              ...cls,
+              tutor: {
+                tutorId: cls.tutor.tutorId,
+                name: `${cls.tutor.firstName} ${cls.tutor.lastName}`,
+                email: cls.tutor.email,
+                phoneNumber: cls.tutor.phoneNumber,
+                bio: cls.tutor.bio
+              }
+            };
+          }
+          // Fallback for cases where tutor data might not be included
+          return {
+            ...cls,
+            tutor: {
+              tutorId: cls.tutorId || user?.tutorId,
+              name: 'Unknown Tutor'
+            }
+          };
+        });
+        
+        setClasses(classesWithTutorNames || []);
       } catch (error) {
         console.error("Error fetching classes:", error);
         setClasses([]);
@@ -93,16 +67,18 @@ export default function Classes() {
       }
     };
     
-    setTimeout(fetchClasses, 800);
-  }, []);
+    // Only fetch if we have a user
+    if (user !== null) {
+      fetchClasses();
+    }
+  }, [user]);
 
-  // Filter classes based on active tab and search term
+  // Filter classes based on search term only
   const filteredClasses = classes.filter(cls => {
-    const matchesTab = activeTab === 'all' || cls.status === activeTab;
-    const matchesSearch = cls.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          cls.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          cls.grade.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesTab && matchesSearch;
+    const matchesSearch = (cls.className?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+                          (cls.description?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                          (cls.tutor?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    return matchesSearch;
   });
 
   const containerVariants = {
@@ -116,200 +92,255 @@ export default function Classes() {
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
         type: "spring",
-        stiffness: 80
+        stiffness: 100,
+        damping: 12
       }
     }
   };
 
-  return (
-    <div className="px-4 py-6">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">My Classes</h1>
-        <p className="text-gray-600">Manage and view all your assigned classes</p>
-      </header>
-
-      {/* Filter and search */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-        <div className="flex space-x-2">
-          <button 
-            onClick={() => setActiveTab('all')}
-            className={`px-4 py-2 rounded-lg ${activeTab === 'all' 
-              ? 'bg-cyan-600 text-white' 
-              : 'bg-white text-gray-600 hover:bg-gray-100'}`}
-          >
-            All Classes
-          </button>
-          <button 
-            onClick={() => setActiveTab('active')}
-            className={`px-4 py-2 rounded-lg ${activeTab === 'active' 
-              ? 'bg-cyan-600 text-white' 
-              : 'bg-white text-gray-600 hover:bg-gray-100'}`}
-          >
-            Active
-          </button>
-          <button 
-            onClick={() => setActiveTab('upcoming')}
-            className={`px-4 py-2 rounded-lg ${activeTab === 'upcoming' 
-              ? 'bg-cyan-600 text-white' 
-              : 'bg-white text-gray-600 hover:bg-gray-100'}`}
-          >
-            Upcoming
-          </button>
-          <button 
-            onClick={() => setActiveTab('completed')}
-            className={`px-4 py-2 rounded-lg ${activeTab === 'completed' 
-              ? 'bg-cyan-600 text-white' 
-              : 'bg-white text-gray-600 hover:bg-gray-100'}`}
-          >
-            Completed
-          </button>
-        </div>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search classes..."
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 w-full md:w-64"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
+  // Show loading if user auth is still being determined
+  if (user === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-100 px-4 py-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-cyan-200"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-cyan-600 absolute top-0 left-0"></div>
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
-              <div className="flex justify-between">
-                <div className="w-1/3">
-                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+  return (
+    <div className="min-h-screen  px-4 py-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-10"
+        >
+          <div className="relative bg-white rounded-2xl shadow-xl p-8 border border-gray-100 overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-400 to-blue-500 opacity-10 rounded-full transform translate-x-16 -translate-y-16"></div>
+            <div className="relative z-10">
+              <div className="flex items-center mb-3">
+                <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-3 rounded-xl mr-4">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                  </svg>
                 </div>
-                <div className="w-1/4">
-                  <div className="h-8 bg-gray-200 rounded w-full"></div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">My Classes</h1>
+                  <p className="text-gray-600 mt-1">Manage and view all your assigned classes</p>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
+          </div>
+        </motion.header>
+
+        {/* Stats and Search Section */}
         <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="space-y-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 gap-6"
         >
-          {filteredClasses.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-              <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-              </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">No classes found</h3>
-              <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+          {/* Stats Card */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <div className="flex items-center">
+              <div className="bg-gradient-to-r from-emerald-400 to-cyan-500 p-3 rounded-lg mr-4">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{classes.length}</p>
+                <p className="text-gray-600 text-sm">Total Classes</p>
+              </div>
             </div>
-          ) : (
-            filteredClasses.map(cls => (
-              <motion.div 
-                key={cls.id} 
-                variants={itemVariants}
-                className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-shadow"
-              >
-                <div className="p-6">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <div className="flex items-center mb-2">
-                        <h3 className="text-lg font-semibold text-gray-800">{cls.name}</h3>
-                        <span className={`ml-3 px-2 py-1 text-xs rounded-full ${
-                          cls.status === 'active' ? 'bg-green-100 text-green-800' :
-                          cls.status === 'upcoming' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {cls.status.charAt(0).toUpperCase() + cls.status.slice(1)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-500 mb-1">{cls.subject} | {cls.grade}</p>
-                      <p className="text-sm text-gray-500 mb-1">{cls.schedule}</p>
-                      <p className="text-sm text-gray-500">{cls.room} | {cls.students} students</p>
-                    </div>
-                    
-                    <div className="mt-4 md:mt-0 flex flex-col items-end">
-                      {cls.status === 'active' && (
-                        <button className="mb-3 bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700 transition-colors">
-                          Start Class
-                        </button>
-                      )}
-                      {cls.status === 'upcoming' && (
-                        <button className="mb-3 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
-                          Prepare Class
-                        </button>
-                      )}
-                      {cls.status === 'completed' && (
-                        <button className="mb-3 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
-                          View Summary
-                        </button>
-                      )}
-                      
-                      {cls.status !== 'upcoming' && (
-                        <div className="w-48">
-                          <div className="flex justify-between text-xs text-gray-500 mb-1">
-                            <span>Course Progress</span>
-                            <span>{cls.progress}%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full ${cls.progress >= 75 ? 'bg-green-500' : cls.progress >= 40 ? 'bg-cyan-500' : 'bg-amber-500'}`} 
-                              style={{ width: `${cls.progress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between">
-                    <div className="flex space-x-2">
-                      <button className="text-gray-600 hover:text-cyan-600 text-sm flex items-center">
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                        </svg>
-                        Students
-                      </button>
-                      <button className="text-gray-600 hover:text-cyan-600 text-sm flex items-center">
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
-                        Assignments
-                      </button>
-                      <button className="text-gray-600 hover:text-cyan-600 text-sm flex items-center">
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                        Reports
-                      </button>
-                    </div>
-                    <div>
-                      {cls.lastClass && (
-                        <span className="text-xs text-gray-500">
-                          Last class: {new Date(cls.lastClass).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
+          </div>
+
+          {/* Search Box */}
+          <div className="relative lg:w-96">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search classes, descriptions, tutors..."
+              className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 shadow-sm transition-all duration-200 hover:shadow-md"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </motion.div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="bg-white rounded-2xl shadow-lg p-6 animate-pulse">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-gray-200 rounded-xl mr-4"></div>
+                  <div className="flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                   </div>
                 </div>
+                <div className="space-y-3">
+                  <div className="h-3 bg-gray-200 rounded"></div>
+                  <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                  <div className="h-10 bg-gray-200 rounded-lg mt-4"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {filteredClasses.length === 0 ? (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="bg-white rounded-2xl shadow-xl p-12 text-center border border-gray-100"
+              >
+                <div className="bg-gradient-to-br from-gray-100 to-gray-200 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-3">No classes found</h3>
+                <p className="text-gray-500 text-lg max-w-md mx-auto">
+                  {classes.length === 0 
+                    ? "You don't have any classes assigned yet. Contact your administrator to get started." 
+                    : "Try adjusting your search criteria to find the classes you're looking for."
+                  }
+                </p>
               </motion.div>
-            ))
-          )}
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredClasses.map(cls => (
+                  <motion.div 
+                    key={cls.classId} 
+                    variants={itemVariants}
+                    whileHover={{ y: -8, transition: { duration: 0.2 } }}
+                    className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 overflow-hidden"
+                  >
+                    <div className="p-6">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center">
+                          <div className="bg-gradient-to-br from-cyan-400 to-blue-500 p-3 rounded-xl mr-4 group-hover:scale-110 transition-transform duration-200">
+                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-bold text-gray-800 mb-1 group-hover:text-cyan-700 transition-colors">
+                              {cls.className || 'Unnamed Class'}
+                            </h3>
+                            <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800">
+                              <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2 animate-pulse"></div>
+                              Active
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="space-y-3 mb-6">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <p className="text-sm text-gray-600 leading-relaxed">
+                            {cls.description || 'No description available'}
+                          </p>
+                        </div>
+                        
+                        {cls.tutor && (
+                          <div className="flex items-center text-sm text-gray-600">
+                            <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            <span className="font-medium">Tutor:</span> 
+                            <span className="ml-1">{cls.tutor.name || `Tutor ID: ${cls.tutor.tutorId}`}</span>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                            <span className="font-medium">Price:</span>
+                          </div>
+                          <span className="text-lg font-bold text-emerald-600">
+                            ${cls.price || '0.00'}
+                          </span>
+                        </div>
+                        
+                        <div className="text-xs text-gray-400 bg-gray-50 rounded px-2 py-1 inline-block">
+                          ID: {cls.classId}
+                        </div>
+                      </div>
+                      
+                      {/* Action Button */}
+                      <button 
+                        className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-3 px-4 rounded-xl font-medium hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                        onClick={() => console.log('View class details:', cls.classId)}
+                      >
+                        View Details
+                        <svg className="w-4 h-4 ml-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Info Banner */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="mt-12"
+        >
+          <div className="bg-gradient-to-r from-blue-500 to-cyan-600 rounded-2xl shadow-xl p-6 text-white overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full transform translate-x-16 -translate-y-16"></div>
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="bg-white bg-opacity-20 p-3 rounded-xl mr-4">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Need Help?</h3>
+                  <p className="text-blue-100">Contact your administrator for class changes or support</p>
+                </div>
+              </div>
+              <button className="bg-white text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors">
+                Contact Support
+              </button>
+            </div>
+          </div>
         </motion.div>
-      )}
+      </div>
     </div>
   );
 }

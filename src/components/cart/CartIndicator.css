@@ -1,0 +1,22 @@
+.cart-indicator {
+  position: relative;
+  display: inline-block;
+  margin-left: 15px;
+  color: #333;
+  text-decoration: none;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background-color: #e53935;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

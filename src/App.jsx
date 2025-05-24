@@ -77,6 +77,9 @@ import TutorMessages from "./pages/tutor/Messages";
 import TutorRecordings from "./pages/tutor/Recordings";
 import TutorFeeReminders from "./pages/tutor/FeeReminders";
 import TutorAttendance from "./pages/tutor/Attendance";
+import TutorialsList from "./pages/tutor/tutorials/TutorialsList";
+import CreateTutorial from "./pages/tutor/tutorials/CreateTutorial";
+import EditTutorial from "./pages/tutor/tutorials/EditTutorial";
 
 // Auth Pages
 import Login from "./pages/auth/Login";
@@ -86,6 +89,19 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 // Import Not Found and Unauthorized pages
 import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
+
+// Shared Imports
+import ShoppingCart from "../src/components/cart/ShoppingCart";
+import Checkout from "../src/components/cart/Checkout";
+
+// Student Imports
+import TuteList from "..//src/components/student/TuteList";
+import MyTutorials from "./pages/student/tutorials/MyTutorials";
+import TutorialDetail from "./pages/student/tutorials/TutorialDetail";
+
+// Parent Imports
+import TuteListParent from "./pages/parent/tutorials/TuteListParent";
+import ChildTutorials from "./pages/parent/tutorials/ChildTutorials";
 
 // App Routes component using the auth context
 const AppRoutes = () => {
@@ -215,6 +231,11 @@ const AppRoutes = () => {
         <Route path="exams" element={<StudentExams />} />
         <Route path="progress" element={<StudentProgress />} />
         <Route path="fee-reminders" element={<StudentFeeReminders />} />
+        
+        {/* Tutorials Subroutes */}
+        <Route path="tutorials" element={<ProtectedRoute role="STUDENT"><TuteList /></ProtectedRoute>} />
+        <Route path="my-tutorials" element={<ProtectedRoute role="STUDENT"><MyTutorials /></ProtectedRoute>} />
+        <Route path="tutorial/:id" element={<ProtectedRoute role="STUDENT"><TutorialDetail /></ProtectedRoute>} />
       </Route>
       
       {/* Tutor Routes */}
@@ -236,6 +257,9 @@ const AppRoutes = () => {
         <Route path="recordings" element={<TutorRecordings />} />
         <Route path="fee-reminders" element={<TutorFeeReminders />} />
         <Route path="attendance" element={<TutorAttendance />} />
+        <Route path="tutorials" element={<ProtectedRoute allowedRoles={["tutor"]}><TutorialsList /></ProtectedRoute>} />
+        <Route path="tutorials/create" element={<ProtectedRoute allowedRoles={["tutor"]}><CreateTutorial /></ProtectedRoute>} />
+        <Route path="tutorials/edit/:id" element={<ProtectedRoute allowedRoles={["tutor"]}><EditTutorial /></ProtectedRoute>} />
       </Route>{/* Redirect based on role */}
       <Route path="/" element={
         (() => {

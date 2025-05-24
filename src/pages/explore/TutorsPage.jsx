@@ -36,7 +36,7 @@ export default function TutorsPage() {
 
   // Filter tutors based on search and subject filter
   const filteredTutors = tutors.filter(tutor => {
-    const matchesSearch = tutor.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const matchesSearch = (tutor.name && tutor.name.toLowerCase().includes(searchTerm.toLowerCase())) || 
                          (tutor.bio && tutor.bio.toLowerCase().includes(searchTerm.toLowerCase()));
     
     if (selectedSubject === 'all') return matchesSearch;
@@ -159,12 +159,20 @@ export default function TutorsPage() {
                 key={tutor.id}
                 className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300"
                 variants={itemVariants}
-              >
-                <div className="h-48 overflow-hidden">
+              >                <div className="h-48 overflow-hidden">
                   <img 
-                    src={tutor.image || `https://randomuser.me/api/portraits/${tutor.id % 2 === 0 ? 'men' : 'women'}/${tutor.id * 10 + 10}.jpg`} 
+                    src={tutor.image || (() => {
+                      const id = tutor.id || Math.floor(Math.random() * 99) + 1;
+                      const validId = typeof id === 'number' ? id : parseInt(id) || 1;
+                      return `https://randomuser.me/api/portraits/${validId % 2 === 0 ? 'men' : 'women'}/${(validId * 10) + 10}.jpg`;
+                    })()} 
                     alt={tutor.name} 
                     className="w-full h-full object-cover object-center"
+                    onError={(e) => {
+                      const id = tutor.id || Math.floor(Math.random() * 99) + 1;
+                      const validId = typeof id === 'number' ? id : parseInt(id) || 1;
+                      e.target.src = `https://randomuser.me/api/portraits/${validId % 2 === 0 ? 'men' : 'women'}/${(validId * 10) + 10}.jpg`;
+                    }}
                   />
                 </div>
                 <div className="p-6">

@@ -8,73 +8,105 @@ import api from './api';
  */
 export const addReminder = async (reminder) => {
   try {
-    // Enhanced validation with more specific error messages
-    if (reminder.studentId === undefined || reminder.studentId === null || reminder.studentId === "") {
-      throw new Error("Student ID is required");
+    // Check if user is authenticated
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      throw new Error("Authentication required. Please log in.");
+    }
+
+    // Validate required fields based on backend model
+    if (!reminder.student || !reminder.student.id) {
+      throw new Error("Student is required");
     }
     
-    // Ensure studentId is a valid number greater than zero
-    const studentId = parseInt(reminder.studentId, 10);
-    if (isNaN(studentId) || studentId <= 0) {
-      throw new Error("Student ID must be a valid number");
-    }
-    
-    if (reminder.amount === undefined || reminder.amount === null || reminder.amount === "") {
-      throw new Error("Amount is required");
-    }
-    
-    // Ensure amount is a valid number greater than zero
-    const amount = parseFloat(reminder.amount);
-    if (isNaN(amount) || amount <= 0) {
-      throw new Error("Amount must be a valid number greater than zero");
-    }
-    
-    // Check due date
-    if (!reminder.dueDate) {
-      throw new Error("Due date is required");
+    if (!reminder.reminderDate) {
+      throw new Error("Reminder date is required");
     }
     
     // Ensure date is a valid date
-    const dueDate = new Date(reminder.dueDate);
-    if (isNaN(dueDate.getTime())) {
-      throw new Error("Invalid due date format");
+    const reminderDate = new Date(reminder.reminderDate);
+    if (isNaN(reminderDate.getTime())) {
+      throw new Error("Invalid reminder date format");
     }
     
-    // Build a clean payload with explicit type conversion
+    // Build payload according to backend model
     const payload = {
-      studentId: studentId,
-      amount: amount,
-      dueDate: dueDate.toISOString(),
-      message: reminder.message || "",
-      resolved: Boolean(reminder.resolved)
+      student: {
+        id: reminder.student.id
+      },
+      reminderDate: reminderDate.toISOString(),
+      message: reminder.message || ""
     };
     
     console.log("Final validated payload being sent:", payload);
-      const response = await api.post('/tutor/fee-reminders', payload);
+    console.log("Authentication token present:", !!token);
     
-    // Validate response data
+    const response = await api.post('/tutor/fee-reminders', payload);
+    
     if (!response.data) {
       console.error("Server returned empty response");
       throw new Error("Server returned empty response");
     }
     
-    // Validate that response has expected fields
-    const responseData = response.data;
-    if (!responseData.id && !responseData.reminderId) {
-      console.error("Server response missing ID field:", responseData);
-      throw new Error("Invalid server response: missing ID");
-    }
-    
-    // If the response doesn't contain studentId, add it from our payload
-    if (!responseData.studentId && responseData.id) {
-      console.warn("Server response missing studentId, adding from request payload");
-      responseData.studentId = payload.studentId;
-    }
-    
-    console.log("Validated server response:", responseData);
-    return responseData;
+    console.log("Server response:", response.data);
+    return response.data;
   } catch (error) {
-    console.error('Error adding fee reminder:', error.response?.data || error.message);
+    console.error('Error adding fee reminder:', error);
+    
+    // Handle specific error cases
+    if (error.response?.status === 403) {
+      const errorMessage = "Access denied. Please ensure you are logged in as a tutor.";
+      console.error("403 Forbidden:", errorMessage);
+      throw new Error(errorMessage);
+    } else if (error.response?.status === 401) {
+      const errorMessage = "Authentication failed. Please log in again.";
+      console.error("401 Unauthorized:", errorMessage);
+      // Optionally redirect to login
+      // window.location.href = '/auth/login';
+      throw new Error(errorMessage);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+    
+    throw error;
+  }
+};
+
+/**
+ * Update a fee reminder
+ * Connects to: PUT /tutor/fee-reminders/{id}
+ * @param {string|number} reminderId - ID of the fee reminder to update
+ * @param {Object} reminder - Updated fee reminder data
+ * @returns {Promise<Object>} Updated fee reminder object
+ */
+export const updateReminder = async (reminderId, reminder) => {
+  try {
+    // Check authentication
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      throw new Error("Authentication required. Please log in.");
+    }
+
+    // Build payload according to backend model
+    const payload = {
+      student: {
+        id: reminder.student.id
+      },
+      reminderDate: new Date(reminder.reminderDate).toISOString(),
+      message: reminder.message || ""
+    };
+    
+    const response = await api.put(`/tutor/fee-reminders/${reminderId}`, payload);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating fee reminder:', error);
+    
+    if (error.response?.status === 403) {
+      throw new Error("Access denied. You can only update your own reminders.");
+    } else if (error.response?.status === 401) {
+      throw new Error("Authentication failed. Please log in again.");
+    }
+    
     throw error;
   }
 };
@@ -86,10 +118,23 @@ export const addReminder = async (reminder) => {
  */
 export const getAllReminders = async () => {
   try {
+    // Check authentication
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      throw new Error("Authentication required. Please log in.");
+    }
+
     const response = await api.get('/tutor/fee-reminders');
     return response.data;
   } catch (error) {
     console.error('Error fetching fee reminders:', error);
+    
+    if (error.response?.status === 403) {
+      throw new Error("Access denied. Please ensure you are logged in as a tutor.");
+    } else if (error.response?.status === 401) {
+      throw new Error("Authentication failed. Please log in again.");
+    }
+    
     throw error;
   }
 };
@@ -107,6 +152,10 @@ export const getReminderById = async (reminderId) => {
   } catch (error) {
     if (error.response?.status === 404) {
       throw new Error(`Fee reminder with ID ${reminderId} not found`);
+    } else if (error.response?.status === 403) {
+      throw new Error("Access denied. You can only view your own reminders.");
+    } else if (error.response?.status === 401) {
+      throw new Error("Authentication failed. Please log in again.");
     }
     console.error('Error fetching fee reminder details:', error);
     throw error;
@@ -126,6 +175,10 @@ export const deleteReminder = async (reminderId) => {
   } catch (error) {
     if (error.response?.status === 404) {
       throw new Error(`Fee reminder with ID ${reminderId} not found`);
+    } else if (error.response?.status === 403) {
+      throw new Error("Access denied. You can only delete your own reminders.");
+    } else if (error.response?.status === 401) {
+      throw new Error("Authentication failed. Please log in again.");
     }
     console.error('Error deleting fee reminder:', error);
     throw error;
@@ -134,7 +187,7 @@ export const deleteReminder = async (reminderId) => {
 
 /**
  * Get fee reminders by student ID
- * This is a client-side filtering since the API doesn't directly support this
+ * Client-side filtering since backend doesn't have specific endpoint
  * @param {string|number} studentId - ID of the student
  * @returns {Promise<Array>} List of fee reminders for the specified student
  */
@@ -142,8 +195,8 @@ export const getRemindersByStudentId = async (studentId) => {
   try {
     const allReminders = await getAllReminders();
     return allReminders.filter(reminder => 
-      reminder.studentId && studentId && 
-      reminder.studentId.toString() === studentId.toString()
+      reminder.student && reminder.student.id && 
+      reminder.student.id.toString() === studentId.toString()
     );
   } catch (error) {
     console.error('Error fetching fee reminders for student:', error);
@@ -151,54 +204,14 @@ export const getRemindersByStudentId = async (studentId) => {
   }
 };
 
-/**
- * Get active fee reminders
- * This is a client-side filtering for reminders that are not yet completed/resolved
- * @returns {Promise<Array>} List of active fee reminders
- */
-export const getActiveReminders = async () => {
-  try {
-    const allReminders = await getAllReminders();
-    return allReminders.filter(reminder => !reminder.resolved);
-  } catch (error) {
-    console.error('Error fetching active fee reminders:', error);
-    throw error;
-  }
-};
-
-/**
- * Mark a fee reminder as resolved
- * This is a helper method since the controller doesn't explicitly define an update endpoint
- * @param {string|number} reminderId - ID of the reminder to update
- * @param {boolean} resolved - Whether the reminder is resolved
- * @returns {Promise<Object>} Updated fee reminder object
- */
-export const markReminderResolved = async (reminderId, resolved = true) => {
-  try {
-    // First get the current reminder data
-    const reminder = await getReminderById(reminderId);
-    
-    // Update the resolved status
-    reminder.resolved = resolved;
-    
-    // Use the PUT endpoint directly
-    const response = await api.put(`/tutor/fee-reminders/${reminderId}`, reminder);
-    return response.data;
-  } catch (error) {
-    console.error('Error updating fee reminder status:', error);
-    throw error;
-  }
-};
-
 // Export all methods
 const feeReminderService = {
   addReminder,
+  updateReminder,
   getAllReminders,
   getReminderById,
   deleteReminder,
-  getRemindersByStudentId,
-  getActiveReminders,
-  markReminderResolved
+  getRemindersByStudentId
 };
 
 export default feeReminderService;

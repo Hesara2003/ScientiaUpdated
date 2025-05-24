@@ -51,12 +51,11 @@ export const getRecordedLessonById = async (lessonId) => {
  * Delete a recorded lesson by ID
  * Connects to: DELETE /tutor/recorded-lessons/{id}
  * @param {string|number} lessonId - ID of the lesson to delete
- * @returns {Promise<boolean>} Success indicator
+ * @returns {Promise<void>}
  */
 export const deleteRecordedLesson = async (lessonId) => {
   try {
     await api.delete(`/tutor/recorded-lessons/${lessonId}`);
-    return true; // Success
   } catch (error) {
     console.error('Error deleting recorded lesson:', error);
     throw error;
@@ -64,50 +63,40 @@ export const deleteRecordedLesson = async (lessonId) => {
 };
 
 /**
- * Get lessons by tutor ID
- * This is a client-side filtering since the API doesn't directly support this
- * @param {string|number} tutorId - ID of the tutor
- * @returns {Promise<Array>} List of lessons created by the specified tutor
- */
-export const getLessonsByTutorId = async (tutorId) => {
-  try {
-    const allLessons = await getAllRecordedLessons();
-    return allLessons.filter(lesson => lesson.tutorId.toString() === tutorId.toString());
-  } catch (error) {
-    console.error('Error fetching lessons by tutor:', error);
-    throw error;
-  }
-};
-
-/**
  * Get lessons by subject ID
- * This is a client-side filtering since the API doesn't directly support this
  * @param {string|number} subjectId - ID of the subject
  * @returns {Promise<Array>} List of lessons for the specified subject
  */
 export const getLessonsBySubjectId = async (subjectId) => {
   try {
     const allLessons = await getAllRecordedLessons();
-    return allLessons.filter(lesson => lesson.subjectId.toString() === subjectId.toString());
+    return allLessons.filter(lesson => 
+      lesson.subject && lesson.subject.id && 
+      lesson.subject.id.toString() === subjectId.toString()
+    );
   } catch (error) {
-    console.error('Error fetching lessons by subject:', error);
+    console.error('Error fetching lessons for subject:', error);
     throw error;
   }
 };
 
 /**
- * Search lessons by title or description
- * @param {string} searchTerm - Search term to match against lesson titles and descriptions
- * @returns {Promise<Array>} List of matching lessons
+ * Search lessons by title, description, or subject
+ * @param {string} searchTerm - Search term to filter lessons
+ * @returns {Promise<Array>} Filtered list of lessons
  */
 export const searchLessons = async (searchTerm) => {
   try {
     const allLessons = await getAllRecordedLessons();
-    const term = searchTerm.toLowerCase();
+    if (!searchTerm || searchTerm.trim() === '') {
+      return allLessons;
+    }
     
+    const lowerSearchTerm = searchTerm.toLowerCase();
     return allLessons.filter(lesson => 
-      lesson.title.toLowerCase().includes(term) || 
-      (lesson.description && lesson.description.toLowerCase().includes(term))
+      lesson.title?.toLowerCase().includes(lowerSearchTerm) ||
+      lesson.description?.toLowerCase().includes(lowerSearchTerm) ||
+      lesson.subject?.toLowerCase().includes(lowerSearchTerm)
     );
   } catch (error) {
     console.error('Error searching lessons:', error);
@@ -121,7 +110,6 @@ export default {
   getAllRecordedLessons,
   getRecordedLessonById,
   deleteRecordedLesson,
-  getLessonsByTutorId,
   getLessonsBySubjectId,
   searchLessons
 };

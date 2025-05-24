@@ -1,10 +1,9 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { getRemindersByStudentId, markReminderResolved } from "../../services/feeReminderService";
-import { getParentStudents } from "../../services/parentStudentService";
-import { getStudentById } from "../../services/studentService";
+import { getRemindersByStudentId } from "../../services/feeReminderService";
+import { getAllStudents } from "../../services/studentService";
 import { toast } from "react-hot-toast";
-import { format, parseISO, isPast, addDays } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import {
   Box,
   Typography,
@@ -25,7 +24,8 @@ import {
 import {
   PaymentOutlined as PaymentIcon,
   AccessTimeOutlined as TimeIcon,
-  CalendarToday as CalendarIcon
+  CalendarToday as CalendarIcon,
+  Warning as WarningIcon
 } from "@mui/icons-material";
 
 export default function ParentFeeReminders() {
@@ -47,38 +47,38 @@ export default function ParentFeeReminders() {
     setIsLoading(true);
     setError(null);
     try {
-      // Get parent-student relationships for this parent
-      const relations = await getParentStudents(parentId);
+      // For demo purposes, we'll get all students and filter by a mock parent relationship
+      // In a real app, you'd have a proper parent-student relationship service
+      const allStudents = await getAllStudents();
       
-      if (!relations || relations.length === 0) {
-        setChildren([]);
+      // Mock: assume first 3 students belong to this parent
+      const parentChildren = allStudents.slice(0, 3);
+      setChildren(parentChildren);
+      
+      if (parentChildren.length === 0) {
         setReminders([]);
         setIsLoading(false);
         return;
       }
       
-      // Get all children details
-      const childrenPromises = relations.map(relation => 
-        getStudentById(relation.studentId)
-      );
-      
-      const childrenData = await Promise.all(childrenPromises);
-      setChildren(childrenData);
-      
       // Get reminders for all children
-      const reminderPromises = relations.map(relation => 
-        getRemindersByStudentId(relation.studentId)
+      const reminderPromises = parentChildren.map(child => 
+        getRemindersByStudentId(child.id)
       );
       
       const reminderResults = await Promise.all(reminderPromises);
       
-      // Flatten the array of arrays
-      const allReminders = reminderResults.flat();
+      // Flatten the array of arrays and add student info
+      const allReminders = reminderResults.flat().map(reminder => ({
+        ...reminder,
+        studentId: reminder.student?.id
+      }));
       
-      // Sort by due date (urgent first)
+      // Sort by reminder date (most recent first)
       const sortedReminders = allReminders.sort((a, b) => {
-        if (a.resolved !== b.resolved) return a.resolved ? 1 : -1;
-        return new Date(a.dueDate) - new Date(b.dueDate);
+        const dateA = new Date(a.reminderDate || new Date());
+        const dateB = new Date(b.reminderDate || new Date());
+        return dateB - dateA;
       });
       
       setReminders(sortedReminders);
@@ -92,9 +92,15 @@ export default function ParentFeeReminders() {
   };
   
   const getChildName = (studentId) => {
-    const child = children.find(c => c.id?.toString() === studentId?.toString() || 
-                                    c.studentId?.toString() === studentId?.toString());
-    return child ? `${child.firstName} ${child.lastName}` : "Your child";
+    const child = children.find(c => 
+      c.id?.toString() === studentId?.toString()
+    );
+    if (child) {
+      const firstName = child.firstName || '';
+      const lastName = child.lastName || '';
+      return `${firstName} ${lastName}`.trim() || `Student #${studentId}`;
+    }
+    return "Your child";
   };
   
   const handlePayNow = (reminder) => {
@@ -105,31 +111,44 @@ export default function ParentFeeReminders() {
   const handlePaymentSubmit = async () => {
     try {
       // In a real app, this would process the payment
-      // For now, we'll just mark the reminder as resolved
-      await markReminderResolved(selectedReminder.id, true);
-      toast.success("Payment successful!");
+      // Since we can't mark as resolved, we'll just show success message
+      toast.success("Payment information submitted successfully!");
+      setPaymentDialogOpen(false);
+      // Optionally refresh data
       fetchParentData();
     } catch (err) {
       console.error("Error processing payment:", err);
       toast.error("Payment processing failed");
-    } finally {
-      setPaymentDialogOpen(false);
     }
   };
   
+  const formatReminderDate = (dateStr) => {
+    if (!dateStr) return "No date specified";
+    
+    try {
+      const date = parseISO(dateStr);
+      return isValid(date) ? format(date, 'PPP') : "Invalid date";
+    } catch (e) {
+      return "Invalid date";
+    }
+  };
+  
+  const isOverdue = (reminderDate) => {
+    if (!reminderDate) return false;
+    return new Date(reminderDate) < new Date();
+  };
+  
   // Determine urgency level for styling
-  const getReminderUrgency = (dueDate) => {
-    const dueDateObj = parseISO(dueDate);
-    if (isPast(dueDateObj)) {
+  const getReminderUrgency = (reminderDate) => {
+    if (isOverdue(reminderDate)) {
       return "error"; // Overdue
-    } else if (isPast(addDays(new Date(), 3))) {
+    }
+    const daysDiff = Math.ceil((new Date(reminderDate) - new Date()) / (1000 * 60 * 60 * 24));
+    if (daysDiff <= 3) {
       return "warning"; // Due soon
     }
     return "info"; // Not urgent
   };
-  
-  const pendingReminders = reminders.filter(r => !r.resolved);
-  const resolvedReminders = reminders.filter(r => r.resolved);
   
   return (
     <Box sx={{ p: 3 }}>
@@ -147,172 +166,119 @@ export default function ParentFeeReminders() {
         </Box>
       ) : reminders.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <WarningIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" gutterBottom>No Fee Reminders</Typography>
           <Typography variant="body1" color="text.secondary">
             You have no pending fee reminders at this time.
           </Typography>
         </Paper>
       ) : (
-        <>
-          {pendingReminders.length > 0 && (
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="h5" gutterBottom>
-                Pending Payments
-              </Typography>
-              <Grid container spacing={3}>
-                {pendingReminders.map((reminder) => {
-                  const urgency = getReminderUrgency(reminder.dueDate);
-                  return (
-                    <Grid item xs={12} md={6} key={reminder.id}>
-                      <Paper 
-                        sx={{ 
-                          p: 3, 
-                          borderLeft: 5,
-                          borderColor: `${urgency}.main`,
-                          boxShadow: 3
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                          <Typography variant="h6">
-                            ${(reminder.amount !== undefined ? reminder.amount : 0).toFixed(2)} Payment
-                          </Typography>
-                          <Chip 
-                            icon={<TimeIcon />}
-                            label={isPast(parseISO(reminder.dueDate)) ? "Overdue" : "Upcoming"} 
-                            color={urgency}
-                            size="small"
-                          />
-                        </Box>
-                        
-                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                          <strong>Student:</strong> {getChildName(reminder.studentId)}
-                        </Typography>
-                        
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <CalendarIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 'small' }} />
-                          <Typography variant="body2" color="text.secondary">
-                            Due: {format(parseISO(reminder.dueDate), 'PPP')}
-                          </Typography>
-                        </Box>
-                        
-                        <Divider sx={{ my: 2 }} />
-                        
-                        <Typography variant="body1" paragraph>
-                          {reminder.message}
-                        </Typography>
-                        
-                        <Button 
-                          variant="contained" 
-                          color="primary"
-                          startIcon={<PaymentIcon />}
-                          fullWidth
-                          onClick={() => handlePayNow(reminder)}
-                        >
-                          Pay Now
-                        </Button>
-                      </Paper>
-                    </Grid>
-                  );
-                })}
+        <Grid container spacing={3}>
+          {reminders.map((reminder) => {
+            const urgency = getReminderUrgency(reminder.reminderDate);
+            return (
+              <Grid item xs={12} md={6} key={reminder.id}>
+                <Paper 
+                  sx={{ 
+                    p: 3, 
+                    borderLeft: 5,
+                    borderColor: `${urgency}.main`,
+                    boxShadow: 3
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Typography variant="h6">
+                      Fee Reminder
+                    </Typography>
+                    <Chip 
+                      icon={<TimeIcon />}
+                      label={isOverdue(reminder.reminderDate) ? "Overdue" : "Active"} 
+                      color={urgency}
+                      size="small"
+                    />
+                  </Box>
+                  
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    <strong>Student:</strong> {getChildName(reminder.studentId)}
+                  </Typography>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <CalendarIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 'small' }} />
+                    <Typography variant="body2" color="text.secondary">
+                      Reminder Date: {formatReminderDate(reminder.reminderDate)}
+                    </Typography>
+                  </Box>
+                  
+                  <Divider sx={{ my: 2 }} />
+                  
+                  <Typography variant="body1" paragraph>
+                    {reminder.message || "Please contact the tutor for fee payment details."}
+                  </Typography>
+                  
+                  <Button 
+                    variant="contained" 
+                    color="primary"
+                    startIcon={<PaymentIcon />}
+                    fullWidth
+                    onClick={() => handlePayNow(reminder)}
+                  >
+                    Contact for Payment
+                  </Button>
+                </Paper>
               </Grid>
-            </Box>
-          )}
-          
-          {resolvedReminders.length > 0 && (
-            <Box>
-              <Typography variant="h5" gutterBottom>
-                Payment History
-              </Typography>
-              <Grid container spacing={3}>
-                {resolvedReminders.map((reminder) => (
-                  <Grid item xs={12} md={6} lg={4} key={reminder.id}>
-                    <Paper sx={{ p: 3, opacity: 0.8 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                        <Typography variant="h6">
-                          ${(reminder.amount !== undefined ? reminder.amount : 0).toFixed(2)} Payment
-                        </Typography>
-                        <Chip 
-                          label="Paid" 
-                          color="success"
-                          size="small"
-                        />
-                      </Box>
-                      
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        <strong>Student:</strong> {getChildName(reminder.studentId)}
-                      </Typography>
-                      
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <CalendarIcon sx={{ mr: 1, color: 'text.secondary', fontSize: 'small' }} />
-                        <Typography variant="body2" color="text.secondary">
-                          Due: {format(parseISO(reminder.dueDate), 'PPP')}
-                        </Typography>
-                      </Box>
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
-            </Box>
-          )}
-        </>
+            );
+          })}
+        </Grid>
       )}
       
       {/* Payment Dialog */}
       <Dialog open={paymentDialogOpen} onClose={() => setPaymentDialogOpen(false)}>
-        <DialogTitle>Complete Payment</DialogTitle>
+        <DialogTitle>Payment Information</DialogTitle>
         <DialogContent>
           <Alert severity="info" sx={{ mb: 3 }}>
-            <AlertTitle>Demo Mode</AlertTitle>
-            This is a demo payment page. In a real application, this would connect to a payment gateway.
+            <AlertTitle>Contact Tutor</AlertTitle>
+            Please contact your tutor directly for payment instructions and details.
           </Alert>
           
           {selectedReminder && (
             <Box sx={{ minWidth: 300 }}>
-              <Typography variant="h6" gutterBottom align="center">
-                ${(selectedReminder.amount !== undefined ? selectedReminder.amount : 0).toFixed(2)}
+              <Typography variant="body1" gutterBottom>
+                <strong>Student:</strong> {getChildName(selectedReminder.studentId)}
               </Typography>
               
-              <Typography variant="body2" gutterBottom>
-                For: {getChildName(selectedReminder.studentId)}
+              <Typography variant="body1" gutterBottom>
+                <strong>Reminder Date:</strong> {formatReminderDate(selectedReminder.reminderDate)}
               </Typography>
               
               <Divider sx={{ my: 2 }} />
               
+              <Typography variant="body1" gutterBottom>
+                <strong>Message:</strong>
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {selectedReminder.message || "Please contact the tutor for fee payment details."}
+              </Typography>
+              
               <TextField
                 fullWidth
-                label="Card Number"
-                placeholder="1234 5678 9012 3456"
+                label="Notes (Optional)"
+                placeholder="Add any notes or questions about this payment..."
                 variant="outlined"
                 margin="normal"
+                multiline
+                rows={3}
               />
-              
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  label="Expiry Date"
-                  placeholder="MM/YY"
-                  variant="outlined"
-                  margin="normal"
-                  sx={{ flex: 1 }}
-                />
-                <TextField
-                  label="CVC"
-                  placeholder="123"
-                  variant="outlined"
-                  margin="normal"
-                  sx={{ flex: 1 }}
-                />
-              </Box>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPaymentDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setPaymentDialogOpen(false)}>Close</Button>
           <Button 
             onClick={handlePaymentSubmit} 
             variant="contained" 
             color="primary"
           >
-            Complete Payment
+            Submit Inquiry
           </Button>
         </DialogActions>
       </Dialog>

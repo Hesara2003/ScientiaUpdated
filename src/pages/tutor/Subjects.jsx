@@ -5,18 +5,14 @@ export default function SubjectSelection() {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userSubjects, setUserSubjects] = useState([]);
-  const [tutorId, setTutorId] = useState(1); // In a real app, this would come from auth context
+  const [tutorName, setTutorName] = useState('John Doe'); // In a real app, this would come from auth context
   
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [allSubjects, mySubjects] = await Promise.all([
-          getAllSubjects(),
-          // In a real app, this would be a specific endpoint to get the tutor's subjects
-          // For now, we'll simulate by checking all subjects for this tutor
-          getTutorSubjects(tutorId)
-        ]);
+        const allSubjects = await getAllSubjects();
+        const mySubjects = await getTutorSubjects(tutorName);
         
         setSubjects(allSubjects || []);
         setUserSubjects(mySubjects || []);
@@ -28,14 +24,12 @@ export default function SubjectSelection() {
     };
     
     fetchData();
-  }, [tutorId]);
+  }, [tutorName]);
   
   // Function to get subjects taught by a tutor
-  // In a real app, this would be a specific API endpoint
-  const getTutorSubjects = async (tutorId) => {
+  // Since backend returns tutor names as strings, we check by name
+  const getTutorSubjects = async (tutorName) => {
     try {
-      // This is a simulation - in a real app, you'd have a direct API endpoint
-      // to get subjects for a specific tutor
       const allSubjects = await getAllSubjects();
       const subjectIds = [];
       
@@ -43,7 +37,8 @@ export default function SubjectSelection() {
       for (const subject of allSubjects) {
         try {
           const tutors = await getSubjectTutors(subject.id);
-          if (tutors.some(tutor => tutor.id === tutorId)) {
+          // Backend returns array of strings (tutor names)
+          if (tutors.includes(tutorName)) {
             subjectIds.push(subject.id);
           }
         } catch (error) {
@@ -68,15 +63,45 @@ export default function SubjectSelection() {
       if (isTeaching) {
         // Remove subject
         setUserSubjects(prev => prev.filter(id => id !== subjectId));
-        // In a real app: await api.delete(`/tutors/${tutorId}/subjects/${subjectId}`);
+        // In a real app: await api.delete(`/tutors/${tutorName}/subjects/${subjectId}`);
       } else {
         // Add subject
         setUserSubjects(prev => [...prev, subjectId]);
-        // In a real app: await api.post(`/tutors/${tutorId}/subjects/${subjectId}`);
+        // In a real app: await api.post(`/tutors/${tutorName}/subjects/${subjectId}`);
       }
     } catch (error) {
       console.error("Error updating subjects:", error);
     }
+  };
+
+  // Get grade badge color
+  const getGradeBadgeColor = (grade) => {
+    const colors = {
+      'Elementary': 'bg-green-100 text-green-800',
+      'Middle': 'bg-blue-100 text-blue-800',
+      'High': 'bg-purple-100 text-purple-800',
+      'College': 'bg-red-100 text-red-800'
+    };
+    return colors[grade] || 'bg-gray-100 text-gray-800';
+  };
+
+  // Get subject icon based on name
+  const getSubjectIcon = (subjectName) => {
+    const name = subjectName.toLowerCase();
+    if (name.includes('math') || name.includes('algebra') || name.includes('calculus')) {
+      return '📊';
+    } else if (name.includes('science') || name.includes('physics') || name.includes('chemistry') || name.includes('biology')) {
+      return '🔬';
+    } else if (name.includes('english') || name.includes('literature') || name.includes('writing')) {
+      return '📚';
+    } else if (name.includes('history') || name.includes('social')) {
+      return '🏛️';
+    } else if (name.includes('art') || name.includes('music')) {
+      return '🎨';
+    } else if (name.includes('computer') || name.includes('programming')) {
+      return '💻';
+    }
+    return '📖';
   };
   
   if (loading) {
@@ -92,6 +117,7 @@ export default function SubjectSelection() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">My Subjects</h1>
         <p className="text-gray-600 mt-1">Select the subjects you are qualified to teach</p>
+        <p className="text-sm text-gray-500 mt-1">Logged in as: {tutorName}</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -101,10 +127,10 @@ export default function SubjectSelection() {
           return (
             <div 
               key={subject.id} 
-              className={`relative rounded-lg overflow-hidden border ${isTeaching ? 'border-green-500' : 'border-gray-200'} hover:shadow-md transition-all`}
+              className={`relative rounded-lg overflow-hidden border ${isTeaching ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white'} hover:shadow-md transition-all`}
             >
               <div className={`absolute top-0 right-0 m-2 ${isTeaching ? 'bg-green-500' : 'bg-gray-200'} rounded-full p-1`}>
-                <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className={`h-5 w-5 ${isTeaching ? 'text-white' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   {isTeaching ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   ) : (
@@ -115,35 +141,40 @@ export default function SubjectSelection() {
               
               <div className="p-6 flex flex-col h-full">
                 <div className="flex items-center mb-4">
-                  {subject.icon && (
-                    <img src={subject.icon} alt={subject.name} className="h-10 w-10 mr-3" />
-                  )}
-                  <h2 className="text-lg font-semibold text-gray-800">{subject.name}</h2>
-                </div>
-                
-                <p className="text-gray-600 mb-4 flex-grow">{subject.description}</p>
-                
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {subject.popularTopics?.slice(0, 3).map((topic, index) => (
-                    <span 
-                      key={index} 
-                      className="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full"
-                    >
-                      {topic}
+                  <span className="text-2xl mr-3">{getSubjectIcon(subject.name)}</span>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-800">{subject.name}</h2>
+                    <span className={`inline-block px-2 py-1 text-xs rounded-full ${getGradeBadgeColor(subject.grade)}`}>
+                      {subject.grade} Level
                     </span>
-                  ))}
+                  </div>
                 </div>
                 
-                <button
-                  onClick={() => toggleSubject(subject.id)}
-                  className={`mt-auto w-full py-2 rounded-md transition-colors ${
-                    isTeaching 
-                      ? 'bg-green-50 text-green-700 border border-green-300 hover:bg-green-100' 
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  }`}
-                >
-                  {isTeaching ? 'Currently Teaching' : 'Add to My Subjects'}
-                </button>
+                <p className="text-gray-600 mb-4 flex-grow">
+                  {subject.description || 'No description available for this subject.'}
+                </p>
+                
+                <div className="mt-auto">
+                  <button
+                    onClick={() => toggleSubject(subject.id)}
+                    className={`w-full py-2 rounded-md transition-colors font-medium ${
+                      isTeaching 
+                        ? 'bg-green-600 text-white hover:bg-green-700' 
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    }`}
+                  >
+                    {isTeaching ? 'Currently Teaching ✓' : 'Add to My Subjects'}
+                  </button>
+                  
+                  {isTeaching && (
+                    <button
+                      onClick={() => toggleSubject(subject.id)}
+                      className="w-full mt-2 py-1 text-sm text-gray-600 hover:text-red-600 transition-colors"
+                    >
+                      Remove from my subjects
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -157,6 +188,35 @@ export default function SubjectSelection() {
           </svg>
           <h3 className="mt-2 text-sm font-medium text-gray-900">No subjects available</h3>
           <p className="mt-1 text-sm text-gray-500">There are no subjects in the system yet.</p>
+        </div>
+      )}
+      
+      {/* Summary section */}
+      {subjects.length > 0 && (
+        <div className="mt-8 bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Summary</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-indigo-600">{subjects.length}</div>
+              <div className="text-sm text-gray-600">Total Subjects</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-green-600">{userSubjects.length}</div>
+              <div className="text-sm text-gray-600">Teaching</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-orange-600">
+                {subjects.length - userSubjects.length}
+              </div>
+              <div className="text-sm text-gray-600">Available</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-purple-600">
+                {userSubjects.length > 0 ? Math.round((userSubjects.length / subjects.length) * 100) : 0}%
+              </div>
+              <div className="text-sm text-gray-600">Coverage</div>
+            </div>
+          </div>
         </div>
       )}
     </div>

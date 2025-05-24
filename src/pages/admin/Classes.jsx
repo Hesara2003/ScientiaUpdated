@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
+import classService from "../../services/classService";
 
 export default function Classes() {
   const [loading, setLoading] = useState(true);
@@ -11,15 +11,10 @@ export default function Classes() {
   const [filterSubject, setFilterSubject] = useState("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [newClass, setNewClass] = useState({
-    name: "",
-    subject: "",
-    tutor: "",
-    room: "",
-    startTime: "",
-    endTime: "",
-    days: [],
-    capacity: 0,
-    enrolledStudents: 0,
+    className: "",
+    description: "",
+    tutorId: "",
+    price: 0,
   });
 
   const subjects = [
@@ -32,28 +27,21 @@ export default function Classes() {
     "History",
   ];
 
-  const weekdays = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-  ];
+  // Subject color mapping for visual appeal
+  const subjectColors = {
+    Mathematics: "from-blue-500 to-blue-600",
+    Physics: "from-purple-500 to-purple-600",
+    Chemistry: "from-green-500 to-green-600",
+    Biology: "from-yellow-500 to-yellow-600",
+    "Computer Science": "from-indigo-500 to-indigo-600",
+    English: "from-red-500 to-red-600",
+    History: "from-pink-500 to-pink-600",
+    default: "from-gray-500 to-gray-600",
+  };
 
-  const timeSlots = [
-    "8:00 AM",
-    "9:00 AM",
-    "10:00 AM",
-    "11:00 AM",
-    "12:00 PM",
-    "1:00 PM",
-    "2:00 PM",
-    "3:00 PM",
-    "4:00 PM",
-    "5:00 PM",
-  ];
+  const getSubjectGradient = (subject) => {
+    return subjectColors[subject] || subjectColors.default;
+  };
 
   // Helper function to get tutor display name
   const getTutorDisplayName = (tutor) => {
@@ -83,32 +71,30 @@ export default function Classes() {
     const fetchClasses = async () => {
       setLoading(true);
       try {
-        const response = await axios.get("http://localhost:8080/classes");
-        console.log("Fetched classes:", response.data);
-        // Sanitize data
-        const classesWithStatus = response.data.map((cls) => ({
+        const response = await classService.getAllClasses();
+        console.log("Fetched classes:", response);
+
+        // Normalize data from backend ClassEntity structure
+        const classesWithStatus = response.map((cls) => ({
           ...cls,
-          id: cls.classId || cls.id || Date.now() + Math.random(), // Ensure unique ID
+          id: cls.classId || cls.id || Date.now() + Math.random(),
           name: cls.className || cls.name || "Unnamed Class",
-          subject: cls.subject || cls.description || "Unknown",
-          // Keep tutor as is (can be object or string)
-          room: cls.room || "N/A",
-          startTime: cls.startTime || "N/A",
-          endTime: cls.endTime || "N/A",
-          days: Array.isArray(cls.days) ? cls.days : [],
-          capacity: Number(cls.capacity) || 0,
-          enrolledStudents: Number(cls.enrolledStudents) || 0,
-          status: cls.status ? String(cls.status) : "active", // Ensure string
-          price: cls.price || 0
+          subject: cls.description || cls.subject || "Unknown",
+          tutor: cls.tutor || "Unknown",
+          room: "N/A", // Not available in backend
+          startTime: "N/A", // Not available in backend
+          endTime: "N/A", // Not available in backend
+          days: [], // Not available in backend
+          capacity: 30, // Default value since not in backend
+          enrolledStudents: 0, // Default value since not in backend
+          status: "active", // Default status
+          price: cls.price || 0,
         }));
         setClasses(classesWithStatus);
       } catch (err) {
         console.error("Error fetching classes:", err);
-        setError(
-          err.response?.status === 403
-            ? "Access denied: Insufficient permissions to view classes"
-            : "Failed to load classes data. Please try refreshing the page."
-        );
+        setError("Failed to load classes data. Please try refreshing the page.");
+
         // Use sample data as fallback
         setClasses([
           {
@@ -124,7 +110,71 @@ export default function Classes() {
             enrolledStudents: 25,
             status: "active",
           },
-          // ... (rest of sample data unchanged)
+          {
+            id: 2,
+            name: "Introduction to Psychology",
+            subject: "Psychology",
+            tutor: "Dr. Brown",
+            room: "B202",
+            startTime: "9:00 AM",
+            endTime: "10:30 AM",
+            days: ["Tuesday", "Thursday"],
+            capacity: 25,
+            enrolledStudents: 20,
+            status: "active",
+          },
+          {
+            id: 3,
+            name: "Organic Chemistry",
+            subject: "Chemistry",
+            tutor: "Dr. Green",
+            room: "C303",
+            startTime: "1:00 PM",
+            endTime: "2:30 PM",
+            days: ["Monday", "Wednesday"],
+            capacity: 30,
+            enrolledStudents: 30,
+            status: "full",
+          },
+          {
+            id: 4,
+            name: "World History",
+            subject: "History",
+            tutor: "Prof. White",
+            room: "D404",
+            startTime: "11:00 AM",
+            endTime: "12:30 PM",
+            days: ["Tuesday", "Thursday"],
+            capacity: 20,
+            enrolledStudents: 15,
+            status: "active",
+          },
+          {
+            id: 5,
+            name: "Data Structures",
+            subject: "Computer Science",
+            tutor: "Dr. Black",
+            room: "E505",
+            startTime: "3:00 PM",
+            endTime: "4:30 PM",
+            days: ["Monday", "Wednesday"],
+            capacity: 25,
+            enrolledStudents: 10,
+            status: "active",
+          },
+          {
+            id: 6,
+            name: "Calculus I",
+            subject: "Mathematics",
+            tutor: "Dr. Smith",
+            room: "A101",
+            startTime: "10:00 AM",
+            endTime: "11:30 AM",
+            days: ["Monday", "Wednesday", "Friday"],
+            capacity: 30,
+            enrolledStudents: 25,
+            status: "active",
+          },
           {
             id: 7,
             name: "Modern World History",
@@ -166,58 +216,46 @@ export default function Classes() {
     return true;
   });
 
-  const scheduleByDay = weekdays.map((day) => ({
-    day,
-    classes: classes.filter((cls) => cls.days.includes(day)),
-  }));
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewClass((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDaySelection = (day) => {
-    setNewClass((prev) => {
-      const updatedDays = prev.days.includes(day)
-        ? prev.days.filter((d) => d !== day)
-        : [...prev.days, day];
-      return { ...prev, days: updatedDays };
-    });
-  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const classData = {
-        ...newClass,
-        className: newClass.name,
-        description: newClass.subject,
-        capacity: Number(newClass.capacity),
-        enrolledStudents: Number(newClass.enrolledStudents),
-        status: "active",
+        className: newClass.className,
+        description: newClass.description,
+        tutorId: newClass.tutorId ? parseInt(newClass.tutorId) : null,
+        price: parseFloat(newClass.price) || 0,
       };
-      
-      const response = await axios.post("http://localhost:8080/classes", classData);
-      
+
+      const response = await classService.createClass(classData);
+
       // Format the response data to match our component's expected structure
       const formattedClass = {
-        ...response.data,
-        id: response.data.classId || response.data.id || Date.now(),
-        name: response.data.className || response.data.name,
-        subject: response.data.description || response.data.subject,
+        ...response,
+        id: response.classId || response.id || Date.now(),
+        name: response.className || response.name,
+        subject: response.description || response.subject,
+        tutor: response.tutor || "Unknown",
+        room: "N/A",
+        startTime: "N/A",
+        endTime: "N/A",
+        days: [],
+        capacity: 30,
+        enrolledStudents: 0,
+        status: "active",
       };
-      
+
       setClasses((prev) => [...prev, formattedClass]);
       setShowAddModal(false);
       setNewClass({
-        name: "",
-        subject: "",
-        tutor: "",
-        room: "",
-        startTime: "",
-        endTime: "",
-        days: [],
-        capacity: 0,
-        enrolledStudents: 0,
+        className: "",
+        description: "",
+        tutorId: "",
+        price: 0,
       });
     } catch (err) {
       console.error("Error creating class:", err);
@@ -250,491 +288,376 @@ export default function Classes() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-blue-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-200"></div>
+            <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-blue-600 absolute top-0 left-0"></div>
+          </div>
+          <p className="mt-4 text-gray-600 font-medium">Loading classes...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Class Management</h1>
-        <p className="text-gray-600">
-          Manage and schedule classes for your institution.
-        </p>
-      </div>
-
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
-        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
-          <button
-            onClick={() => setActiveTab("all")}
-            className={`px-4 py-2 rounded-md ${
-              activeTab === "all" ? "bg-white shadow" : "hover:bg-gray-200"
-            }`}
-          >
-            All Classes
-          </button>
-          <button
-            onClick={() => setActiveTab("active")}
-            className={`px-4 py-2 rounded-md ${
-              activeTab === "active" ? "bg-white shadow" : "hover:bg-gray-200"
-            }`}
-          >
-            Active
-          </button>
-          <button
-            onClick={() => setActiveTab("full")}
-            className={`px-4 py-2 rounded-md ${
-              activeTab === "full" ? "bg-white shadow" : "hover:bg-gray-200"
-            }`}
-          >
-            Full
-          </button>
-          <button
-            onClick={() => setActiveTab("cancelled")}
-            className={`px-4 py-2 rounded-md ${
-              activeTab === "cancelled" ? "bg-white shadow" : "hover:bg-gray-200"
-            }`}
-          >
-            Cancelled
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Enhanced Header */}
+        <div className="mb-8 text-center">
+          <div className="relative inline-block">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+              Class Management
+            </h1>
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
+          </div>
+          <p className="text-gray-600 mt-4 text-lg">
+            Manage and organize your institution's classes with ease
+          </p>
         </div>
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
-        >
-          <svg
-            className="w-5 h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-          Add Class
-        </button>
-      </div>
-
-      <div className="bg-white shadow-md rounded-lg p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search classes by name, tutor or room..."
-                className="w-full border border-gray-300 rounded-md pl-10 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <svg
-                className="w-5 h-5 text-gray-400 absolute left-3 top-2.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+        {/* Enhanced Tab Navigation and Add Button */}
+        <div className="flex flex-col lg:flex-row justify-between items-center mb-8 space-y-4 lg:space-y-0">
+          <div className="flex space-x-1 bg-white rounded-xl p-1 shadow-lg border border-gray-100">
+            {["all", "active", "full", "cancelled"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+                  activeTab === tab
+                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md transform scale-105"
+                    : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                }`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
+                {tab.charAt(0).toUpperCase() + tab.slice(1)} Classes
+              </button>
+            ))}
           </div>
 
-          <div className="w-full md:w-48">
-            <select
-              className="w-full border border-gray-300 rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={filterSubject}
-              onChange={(e) => setFilterSubject(e.target.value)}
-            >
-              <option value="all">All Subjects</option>
-              {subjects.map((subject) => (
-                <option key={subject} value={subject}>
-                  {subject}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-red-400"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-        {filteredClasses.map((cls) => (
-          <div
-            key={cls.id}
-            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl flex items-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
           >
-            <div
-              className={`h-2 ${getCapacityColor(
-                getCapacityPercentage(cls.enrolledStudents, cls.capacity)
-              )}`}
-            ></div>
-            <div className="p-6">
-              <div className="flex justify-between items-start">
-                <h3 className="text-lg font-bold text-gray-800 mb-1">
-                  {cls.name || "Unnamed Class"}
-                </h3>
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                    cls.status || "active"
-                  )}`}
-                >
-                  {typeof cls.status === "string" && cls.status
-                    ? cls.status.charAt(0).toUpperCase() + cls.status.slice(1)
-                    : "Active"}
-                </span>
-              </div>
-
-              <p className="text-sm text-blue-600 mb-4">
-                {cls.subject || "Unknown"}
-              </p>
-
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center">
-                  <svg
-                    className="w-4 h-4 text-gray-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                  <span className="text-sm text-gray-700">
-                    {getTutorDisplayName(cls.tutor)}
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <svg
-                    className="w-4 h-4 text-gray-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                    />
-                  </svg>
-                  <span className="text-sm text-gray-700">
-                    Room {cls.room || "N/A"}
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <svg
-                    className="w-4 h-4 text-gray-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <span className="text-sm text-gray-700">
-                    {cls.startTime || "N/A"} - {cls.endTime || "N/A"}
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <svg
-                    className="w-4 h-4 text-gray-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <span className="text-sm text-gray-700">
-                    {cls.days.length > 0
-                      ? cls.days.join(", ")
-                      : "No days"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Class Capacity</span>
-                  <span>
-                    {cls.enrolledStudents}/{cls.capacity} Students
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${getCapacityColor(
-                      getCapacityPercentage(cls.enrolledStudents, cls.capacity)
-                    )}`}
-                    style={{
-                      width: `${getCapacityPercentage(
-                        cls.enrolledStudents,
-                        cls.capacity
-                      )}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-between">
-                <Link
-                  to={`/classes/${cls.id}/students`}
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
-                >
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                  Students
-                </Link>
-                <Link
-                  to={`/classes/${cls.id}/edit`}
-                  className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center"
-                >
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                    />
-                  </svg>
-                  Edit
-                </Link>
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {filteredClasses.length === 0 && (
-          <div className="col-span-full bg-white rounded-lg shadow-md p-6 text-center">
             <svg
-              className="w-16 h-16 text-gray-300 mx-auto mb-4"
+              className="w-5 h-5 mr-2"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
               />
             </svg>
-            <h3 className="text-lg font-medium text-gray-800 mb-1">
-              No Classes Found
-            </h3>
-            <p className="text-gray-600 mb-4">
-              No classes matching your current filters were found.
-            </p>
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setFilterSubject("all");
-                setActiveTab("all");
-              }}
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Clear Filters
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Weekly Schedule View */}
-      <div className="mb-10">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">
-          Weekly Schedule
-        </h2>
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 w-24">
-                    Time / Day
-                  </th>
-                  {weekdays.map((day) => (
-                    <th
-                      key={day}
-                      className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200"
-                    >
-                      {day}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {timeSlots.map((time, index) => (
-                  <tr
-                    key={time}
-                    className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
-                  >
-                    <td className="py-2 px-4 border-b border-gray-200 font-medium text-gray-500">
-                      {time}
-                    </td>
-                    {weekdays.map((day) => {
-                      const classesAtTimeAndDay = classes.filter(
-                        (cls) => cls.days.includes(day) && cls.startTime === time
-                      );
-                      return (
-                        <td key={day} className="py-2 px-4 border-b border-gray-200">
-                          {classesAtTimeAndDay.map((cls) => (
-                            <div
-                              key={cls.id}
-                              className={`p-2 rounded text-sm mb-1 ${
-                                cls.subject === "Mathematics"
-                                  ? "bg-blue-100 border-l-4 border-blue-500"
-                                  : cls.subject === "Physics"
-                                  ? "bg-purple-100 border-l-4 border-purple-500"
-                                  : cls.subject === "Chemistry"
-                                  ? "bg-green-100 border-l-4 border-green-500"
-                                  : cls.subject === "Biology"
-                                  ? "bg-yellow-100 border-l-4 border-yellow-500"
-                                  : cls.subject === "Computer Science"
-                                  ? "bg-indigo-100 border-l-4 border-indigo-500"
-                                  : cls.subject === "English"
-                                  ? "bg-red-100 border-l-4 border-red-500"
-                                  : "bg-pink-100 border-l-4 border-pink-500"
-                              }`}
-                            >
-                              <div className="font-medium">{cls.name || "Unnamed Class"}</div>
-                              <div className="text-xs text-gray-600">
-                                {cls.room || "N/A"} - {getTutorDisplayName(cls.tutor)}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {cls.startTime || "N/A"} - {cls.endTime || "N/A"}
-                              </div>
-                            </div>
-                          ))}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+            Add New Class
+          </button>
         </div>
-      </div>
 
-      {showAddModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
-            <div className="flex justify-between items-center border-b border-gray-200 px-6 py-4">
-              <h3 className="text-lg font-bold text-gray-800">Add New Class</h3>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="text-gray-400 hover:text-gray-500"
-              >
+        {/* Enhanced Search and Filter */}
+        <div className="bg-white shadow-xl rounded-2xl p-6 mb-8 border border-gray-100">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-1">
+              <div className="relative group">
+                <input
+                  type="text"
+                  placeholder="Search classes by name, tutor, or subject..."
+                  className="w-full border-2 border-gray-200 rounded-xl pl-12 py-4 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 bg-gray-50 focus:bg-white"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
                 <svg
-                  className="w-6 h-6"
+                  className="w-6 h-6 text-gray-400 group-focus-within:text-blue-500 absolute left-4 top-4 transition-colors duration-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
                 </svg>
-              </button>
+              </div>
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div className="w-full md:w-64">
+              <select
+                className="w-full border-2 border-gray-200 rounded-xl py-4 px-4 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 bg-gray-50 focus:bg-white"
+                value={filterSubject}
+                onChange={(e) => setFilterSubject(e.target.value)}
+              >
+                <option value="all">All Subjects</option>
+                {subjects.map((subject) => (
+                  <option key={subject} value={subject}>
+                    {subject}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Error Display */}
+        {error && (
+          <div className="bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-400 p-6 mb-8 rounded-xl shadow-lg">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-6 w-6 text-red-400"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-red-700 font-medium">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Classes Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mb-12">
+          {filteredClasses.map((cls, index) => (
+            <div
+              key={cls.id}
+              className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-2"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              {/* Gradient Header */}
+              <div
+                className={`h-3 bg-gradient-to-r ${getSubjectGradient(
+                  cls.subject
+                )}`}
+              ></div>
+
+              <div className="p-6">
+                {/* Class Header */}
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-blue-600 transition-colors duration-300">
+                      {cls.name || "Unnamed Class"}
+                    </h3>
+                    <div
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r ${getSubjectGradient(
+                        cls.subject
+                      )} text-white shadow-md`}
+                    >
+                      {cls.subject || "Unknown"}
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 shadow-sm">
+                    Active
+                  </span>
+                </div>
+
+                {/* Class Details */}
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center group/item">
+                    <div className="p-2 rounded-lg bg-blue-50 group-hover/item:bg-blue-100 transition-colors duration-300 mr-3">
+                      <svg
+                        className="w-4 h-4 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                    </div>
+                    <span className="text-gray-700 font-medium">
+                      {getTutorDisplayName(cls.tutor)}
+                    </span>
+                  </div>
+
+                  {cls.price > 0 && (
+                    <div className="flex items-center group/item">
+                      <div className="p-2 rounded-lg bg-green-50 group-hover/item:bg-green-100 transition-colors duration-300 mr-3">
+                        <svg
+                          className="w-4 h-4 text-green-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                          />
+                        </svg>
+                      </div>
+                      <span className="text-gray-700 font-medium">
+                        ${cls.price}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3">
+                  <Link
+                    to={`/classes/${cls.id}/students`}
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-center py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center"
+                  >
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
+                    </svg>
+                    Students
+                  </Link>
+                  <Link
+                    to={`/classes/${cls.id}/edit`}
+                    className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-center py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center"
+                  >
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                      />
+                    </svg>
+                    Edit
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Enhanced No Classes Found */}
+          {filteredClasses.length === 0 && (
+            <div className="col-span-full bg-white rounded-2xl shadow-lg p-12 text-center border border-gray-100">
+              <div className="max-w-md mx-auto">
+                <div className="mb-6">
+                  <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg
+                      className="w-12 h-12 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                  No Classes Found
+                </h3>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  No classes match your current search criteria. Try adjusting
+                  your filters or create a new class.
+                </p>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setFilterSubject("all");
+                      setActiveTab("all");
+                    }}
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+                  >
+                    Clear All Filters
+                  </button>
+                  <div className="text-sm text-gray-500">or</div>
+                  <button
+                    onClick={() => setShowAddModal(true)}
+                    className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+                  >
+                    Create New Class
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Enhanced Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100">
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-t-2xl px-6 py-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-bold text-white">Add New Class</h3>
+                  <button
+                    onClick={() => setShowAddModal(false)}
+                    className="text-white hover:text-gray-200 transition-colors duration-200 p-1 rounded-lg hover:bg-white hover:bg-opacity-20"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Form */}
+              <form onSubmit={handleSubmit}>
+                <div className="p-6 space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Class Name
                     </label>
                     <input
                       type="text"
-                      name="name"
-                      value={newClass.name}
+                      name="className"
+                      value={newClass.className}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300"
+                      placeholder="Enter class name"
                       required
                     />
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Subject
                     </label>
                     <select
-                      name="subject"
-                      value={newClass.subject}
+                      name="description"
+                      value={newClass.description}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300"
                       required
                     >
                       <option value="">Select Subject</option>
@@ -745,156 +668,80 @@ export default function Classes() {
                       ))}
                     </select>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tutor
-                    </label>
-                    <input
-                      type="text"
-                      name="tutor"
-                      value={newClass.tutor}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Room
-                    </label>
-                    <input
-                      type="text"
-                      name="room"
-                      value={newClass.room}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Start Time
-                    </label>
-                    <select
-                      name="startTime"
-                      value={newClass.startTime}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Select Start Time</option>
-                      {timeSlots.map((time) => (
-                        <option key={time} value={time}>
-                          {time}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      End Time
-                    </label>
-                    <select
-                      name="endTime"
-                      value={newClass.endTime}
-                      onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Select End Time</option>
-                      {timeSlots.map((time) => (
-                        <option key={time} value={time}>
-                          {time}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Capacity
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Tutor ID
                     </label>
                     <input
                       type="number"
-                      name="capacity"
-                      value={newClass.capacity || ""}
+                      name="tutorId"
+                      value={newClass.tutorId}
                       onChange={handleInputChange}
-                      min="1"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
+                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300"
+                      placeholder="Enter tutor ID (optional)"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Enrolled Students
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Price ($)
                     </label>
                     <input
                       type="number"
-                      name="enrolledStudents"
-                      value={newClass.enrolledStudents || ""}
+                      name="price"
+                      value={newClass.price}
                       onChange={handleInputChange}
                       min="0"
-                      max={newClass.capacity || 0}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
+                      step="0.01"
+                      className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300"
+                      placeholder="0.00"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Days
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {weekdays.map((day) => (
-                      <button
-                        key={day}
-                        type="button"
-                        onClick={() => handleDaySelection(day)}
-                        className={`px-3 py-1 rounded-full text-sm ${
-                          newClass.days.includes(day)
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-                        }`}
-                      >
-                        {day.slice(0, 3)}
-                      </button>
-                    ))}
-                  </div>
+                {/* Modal Footer */}
+                <div className="bg-gray-50 px-6 py-4 flex space-x-3 rounded-b-2xl">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 hover:border-gray-400 transition-all duration-300 font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg font-medium"
+                  >
+                    Create Class
+                  </button>
                 </div>
-              </div>
-              <div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
-                >
-                  Save Class
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Footer Stats */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 text-center border border-gray-100">
+          <div className="flex items-center justify-center space-x-2 text-gray-600">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+            <span className="font-medium">
+              Showing {filteredClasses.length} of {classes.length} classes
+            </span>
           </div>
         </div>
-      )}
-
-      <div className="text-center text-sm text-gray-500 mt-8">
-        <p>
-          Showing {filteredClasses.length} of {classes.length} classes
-        </p>
       </div>
     </div>
   );

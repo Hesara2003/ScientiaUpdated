@@ -19,7 +19,7 @@ export const getAllSubjects = async () => {
  * Get a subject by ID
  * Connects to: GET /subjects/{id}
  * @param {string|number} id - The ID of the subject to retrieve
- * @returns {Promise<Object>} Subject object
+ * @returns {Promise<Object>} Subject object with id, name, description, grade
  */
 export const getSubjectById = async (id) => {
   try {
@@ -35,7 +35,7 @@ export const getSubjectById = async (id) => {
  * Get timetable for a subject
  * Connects to: GET /subjects/{id}/timetable
  * @param {string|number} id - The ID of the subject
- * @returns {Promise<Array>} List of class sessions for the subject
+ * @returns {Promise<Array<string>>} List of timetable strings for the subject
  */
 export const getSubjectTimetable = async (id) => {
   try {
@@ -51,7 +51,7 @@ export const getSubjectTimetable = async (id) => {
  * Get recordings for a subject
  * Connects to: GET /subjects/{id}/recordings
  * @param {string|number} id - The ID of the subject
- * @returns {Promise<Array>} List of recorded lessons for the subject
+ * @returns {Promise<Array<string>>} List of recording strings for the subject
  */
 export const getSubjectRecordings = async (id) => {
   try {
@@ -66,7 +66,7 @@ export const getSubjectRecordings = async (id) => {
 /**
  * Create a new subject
  * Connects to: POST /subjects
- * @param {Object} subjectData - The subject data to create
+ * @param {Object} subjectData - The subject data {name, description, grade}
  * @returns {Promise<Object>} Created subject object
  */
 export const createSubject = async (subjectData) => {
@@ -83,7 +83,7 @@ export const createSubject = async (subjectData) => {
  * Update an existing subject
  * Connects to: PUT /subjects/{id}
  * @param {string|number} id - The ID of the subject to update
- * @param {Object} subjectData - The updated subject data
+ * @param {Object} subjectData - The updated subject data {name, description, grade}
  * @returns {Promise<Object>} Updated subject object
  */
 export const updateSubject = async (id, subjectData) => {
@@ -100,12 +100,12 @@ export const updateSubject = async (id, subjectData) => {
  * Delete a subject
  * Connects to: DELETE /subjects/{id}
  * @param {string|number} id - The ID of the subject to delete
- * @returns {Promise<Object>} Response object
+ * @returns {Promise<void>} No response body (void from backend)
  */
 export const deleteSubject = async (id) => {
   try {
-    const response = await api.delete(`/subjects/${id}`);
-    return response.data;
+    await api.delete(`/subjects/${id}`);
+    // Backend returns void, so no response data to return
   } catch (error) {
     console.error(`Error deleting subject with ID ${id}:`, error);
     throw error;
@@ -116,7 +116,7 @@ export const deleteSubject = async (id) => {
  * Get tutors for a specific subject
  * Connects to: GET /subjects/{id}/tutors
  * @param {string|number} id - The ID of the subject
- * @returns {Promise<Array>} List of tutors teaching the subject
+ * @returns {Promise<Array<string>>} List of tutor names teaching the subject
  */
 export const getSubjectTutors = async (id) => {
   try {

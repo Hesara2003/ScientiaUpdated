@@ -4,8 +4,12 @@ import axios from "axios";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
          PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from "recharts";
 import { format } from "date-fns";
-import userService from "../../services/userService";
+// Import actual services
+import studentService from "../../services/studentService";
+import parentService from "../../services/parentService";
 import * as feeService from "../../services/feeService";
+import * as tutorService from "../../services/tutorService";
+import classService from "../../services/classService";
 import { safeAccess } from "../../utils/safeUtils";
 
 export default function AdminDashboard() {
@@ -24,8 +28,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const navigate = useNavigate(); // For redirecting to login
-    useEffect(() => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
       setError(null);
@@ -34,157 +39,106 @@ export default function AdminDashboard() {
       if (!token) {
         setError("Please log in to access the dashboard.");
         setLoading(false);
-        navigate('/login'); // Redirect to login
+        navigate('/login');
         return;
       }
       
       // Ensure admin role is set
       localStorage.setItem('userRole', 'admin');
-      console.log('Using token:', token.substring(0, 15) + '...'); // Debug token
+      console.log('Using token:', token.substring(0, 15) + '...');
 
-      try {        // Refresh API token for fresh API calls
-        const { refreshApiToken } = await import('../../utils/apiUtils');
-        refreshApiToken();
-          
-        // Fetch students data using our enhanced userService
-        let students;
-        try {
-          students = await userService.getAllStudents();
-          console.log('Students data type:', typeof students);
-          console.log('Is students an array?', Array.isArray(students));
-          console.log('Students data:', students);
-        } catch (studentError) {
-          console.error('Error fetching students:', studentError);
-          students = [];
-        }
-          // Ensure students is always an array
-        const studentsArray = Array.isArray(students) ? students : [];
-        console.log('Students array length:', studentsArray.length);
-        
-        // Safe access to properties, ensuring we don't get errors with undefined values
-        const safeAccess = (obj, path, defaultVal = null) => {
-          if (!obj) return defaultVal;
-          const parts = Array.isArray(path) ? path : path.split('.');
-          let result = obj;
-          for (const part of parts) {
-            if (result == null || typeof result !== 'object') return defaultVal;
-            result = result[part];
-          }
-          return result !== undefined ? result : defaultVal;
-        };
-        
-        // Fetch recent registrations (last 7 days, both students and parents)
-        try {
-          // Get student registrations
-          const newStudents = await userService.getRecentRegistrations(7, 'student');
-          console.log('New student registrations:', newStudents);
-          
-          // Get parent registrations
-          const newParents = await userService.getRecentRegistrations(7, 'parent');
-          console.log('New parent registrations:', newParents);
-            // Combine and sort by most recent
-          const allNewRegistrations = [...newStudents, ...newParents]
-            .filter(user => user && typeof user === 'object') // Filter out invalid entries
-            .sort((a, b) => {
-              const dateA = new Date(safeAccess(a, 'createdAt') || safeAccess(a, 'enrollmentDate') || 0);
-              const dateB = new Date(safeAccess(b, 'createdAt') || safeAccess(b, 'enrollmentDate') || 0);
-              return dateB - dateA;
-            })
-            .map(user => ({
-              id: safeAccess(user, 'id') || safeAccess(user, 'studentId') || safeAccess(user, 'parentId') || Math.random().toString(36).substring(2),
-              name: `${safeAccess(user, 'firstName', '')} ${safeAccess(user, 'lastName', '')}`.trim() || 'Unknown User',
-              role: safeAccess(user, 'role', 'Unknown'),
-              date: safeAccess(user, 'createdAt') || safeAccess(user, 'enrollmentDate') || new Date().toISOString(),
-              status: safeAccess(user, 'status', 'active')
-            }))
-            .slice(0, 10); // Limit to most recent 10
-            
-          setNewRegistrations(allNewRegistrations);
-          console.log('All new registrations:', allNewRegistrations);
-        } catch (regError) {
-          console.error('Error fetching recent registrations:', regError);
-          // Fallback is handled by the service now
-        }
-        
+      try {
+        // Fetch all data concurrently
+        const [studentsData, parentsData, feesData, tutorsData, classesData] = await Promise.allSettled([
+          studentService.getAllStudents(),
+          parentService.getAllParents(),
+          feeService.getAllFees(),
+          tutorService.getAllTutors(),
+          classService.getAllClasses()
+        ]);
+
+        // Process students data
+        const students = studentsData.status === 'fulfilled' ? studentsData.value : [];
+        console.log('Students fetched:', students.length);
+
+        // Process parents data
+        const parents = parentsData.status === 'fulfilled' ? parentsData.value : [];
+        console.log('Parents fetched:', parents.length);
+
+        // Process fees data
+        const fees = feesData.status === 'fulfilled' ? feesData.value : [];
+        console.log('Fees fetched:', fees.length);
+
+        // Process tutors data
+        const tutors = tutorsData.status === 'fulfilled' ? tutorsData.value : [];
+        console.log('Tutors fetched:', tutors.length);
+
+        // Process classes data
+        const classes = classesData.status === 'fulfilled' ? classesData.value : [];
+        console.log('Classes fetched:', classes.length);
+
+        // Calculate fee statistics
         let feeCollection = 0;
         let pendingFees = 0;
-        let feesByMonth = [];
-
-        try {
-          // Use feeService to fetch fees data
-          const fees = await feeService.getAllFees();
-          console.log('Fees data:', fees);          // Process the fee data
-          if (Array.isArray(fees)) {
-            fees.forEach(fee => {
-              if (fee && typeof fee === 'object') {
-                if (safeAccess(fee, 'status') === 'paid') {
-                  feeCollection += Number(safeAccess(fee, 'amount', 0));
-                } else {
-                  pendingFees += Number(safeAccess(fee, 'amount', 0));
-                }
-              }
-            });
+        
+        fees.forEach(fee => {
+          const amount = Number(fee.amount || 0);
+          if (fee.status?.toLowerCase() === 'paid') {
+            feeCollection += amount;
           } else {
-            console.warn('Fees is not an array:', fees);
+            pendingFees += amount;
           }
+        });
 
-          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          feesByMonth = monthNames.map(month => ({ name: month, collected: 0, pending: 0 }));          if (Array.isArray(fees)) {
-            fees.forEach(fee => {
-              if (fee && typeof fee === 'object' && fee.dueDate) {
-                try {
-                  const date = new Date(fee.dueDate);
-                  if (!isNaN(date.getTime())) {
-                    const month = date.getMonth();
-                    if (month >= 0 && month < 12) {
-                      if (safeAccess(fee, 'status') === 'paid') {
-                        feesByMonth[month].collected += Number(safeAccess(fee, 'amount', 0));
-                      } else {
-                        feesByMonth[month].pending += Number(safeAccess(fee, 'amount', 0));
-                      }
-                    }
+        // Generate fee data by month
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const feesByMonth = monthNames.map(month => ({ name: month, collected: 0, pending: 0 }));
+        
+        fees.forEach(fee => {
+          if (fee.dueDate) {
+            try {
+              const date = new Date(fee.dueDate);
+              if (!isNaN(date.getTime())) {
+                const month = date.getMonth();
+                const amount = Number(fee.amount || 0);
+                if (month >= 0 && month < 12) {
+                  if (fee.status?.toLowerCase() === 'paid') {
+                    feesByMonth[month].collected += amount;
+                  } else {
+                    feesByMonth[month].pending += amount;
                   }
-                } catch (dateError) {
-                  console.warn('Error processing fee date:', dateError);
                 }
               }
-            });
+            } catch (dateError) {
+              console.warn('Error processing fee date:', dateError);
+            }
           }
+        });
 
-          setFeeData(feesByMonth);
-        } catch (err) {
-          console.error("Error fetching fee data:", err);
-          setFeeData([
-            { name: 'Jan', collected: 4000, pending: 1000 },
-            { name: 'Feb', collected: 5000, pending: 1200 },
-            { name: 'Mar', collected: 6000, pending: 800 },
-            { name: 'Apr', collected: 7000, pending: 1500 },
-            { name: 'May', collected: 5500, pending: 900 },
-            { name: 'Jun', collected: 6500, pending: 700 }
-          ]);
-        }        const activeStudents = studentsArray.filter(student => 
-          student && typeof student === 'object' && student.status === 'active'
+        setFeeData(feesByMonth);
+
+        // Calculate active vs inactive students
+        const activeStudents = students.filter(student => 
+          student?.status?.toLowerCase() === 'active' || !student?.status
         ).length;
-        const inactiveStudents = studentsArray.length - activeStudents;
+        const inactiveStudents = students.length - activeStudents;
 
         setStatusData([
           { name: 'Active', value: activeStudents || 1 },
           { name: 'Inactive', value: inactiveStudents || 0 }
-        ]);        const currentYear = new Date().getFullYear();
+        ]);
+
+        // Generate enrollment data by month (current year)
+        const currentYear = new Date().getFullYear();
         const enrollmentCounts = {};
 
-        studentsArray.forEach(student => {
-          if (student && typeof student === 'object' && student.enrollmentDate) {
+        students.forEach(student => {
+          if (student?.enrollmentDate) {
             try {
               const enrollmentDate = new Date(student.enrollmentDate);
-              // Check if date is valid
-              if (!isNaN(enrollmentDate.getTime())) {
+              if (!isNaN(enrollmentDate.getTime()) && enrollmentDate.getFullYear() === currentYear) {
                 const month = enrollmentDate.getMonth();
-                const year = enrollmentDate.getFullYear();
-
-                if (year === currentYear) {
-                  enrollmentCounts[month] = (enrollmentCounts[month] || 0) + 1;
-                }
+                enrollmentCounts[month] = (enrollmentCounts[month] || 0) + 1;
               }
             } catch (dateError) {
               console.warn('Error parsing enrollment date:', dateError);
@@ -192,25 +146,64 @@ export default function AdminDashboard() {
           }
         });
 
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const enrollmentByMonth = monthNames.map((month, index) => ({
           name: month,
           students: enrollmentCounts[index] || 0
         }));
 
         setEnrollmentData(enrollmentByMonth);
-          setStats([
+
+        // Get recent registrations (last 30 days)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const recentStudentRegistrations = students
+          .filter(student => {
+            if (!student?.enrollmentDate) return false;
+            const enrollmentDate = new Date(student.enrollmentDate);
+            return !isNaN(enrollmentDate.getTime()) && enrollmentDate >= thirtyDaysAgo;
+          })
+          .map(student => ({
+            id: student.studentId || student.id,
+            name: `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Unknown Student',
+            role: 'student',
+            date: student.enrollmentDate,
+            status: student.status || 'active'
+          }));
+
+        const recentParentRegistrations = parents
+          .filter(parent => {
+            if (!parent?.createdAt) return false;
+            const createdDate = new Date(parent.createdAt);
+            return !isNaN(createdDate.getTime()) && createdDate >= thirtyDaysAgo;
+          })
+          .map(parent => ({
+            id: parent.parentId || parent.id,
+            name: `${parent.firstName || ''} ${parent.lastName || ''}`.trim() || 'Unknown Parent',
+            role: 'parent',
+            date: parent.createdAt,
+            status: parent.status || 'active'
+          }));
+
+        const allNewRegistrations = [...recentStudentRegistrations, ...recentParentRegistrations]
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+          .slice(0, 10);
+
+        setNewRegistrations(allNewRegistrations);
+
+        // Update stats
+        setStats([
           { 
             label: "Total Students", 
-            value: studentsArray.length, 
-            change: `+${Math.floor(studentsArray.length * 0.12)}%`, 
+            value: students.length, 
+            change: `+${Math.floor(students.length * 0.12)}%`, 
             icon: "users" 
           },
           { 
-            label: "New Registrations", 
-            value: newRegistrations.length, 
-            change: `+${newRegistrations.length}`, 
-            icon: "user-plus" 
+            label: "Active Courses", 
+            value: classes.length, 
+            change: `+${classes.length > 0 ? Math.floor(classes.length * 0.08) : 0}%`, 
+            icon: "book" 
           },
           { 
             label: "Fee Collection", 
@@ -224,21 +217,20 @@ export default function AdminDashboard() {
             change: "-5%", 
             icon: "alert" 
           }
-        ]);        const recentStudentsList = [...studentsArray]
-          .filter(student => student && typeof student === 'object')
+        ]);
+
+        // Set recent students
+        const recentStudentsList = [...students]
           .sort((a, b) => {
-            // Safely parse dates
             const dateA = a.enrollmentDate ? new Date(a.enrollmentDate) : new Date(0);
             const dateB = b.enrollmentDate ? new Date(b.enrollmentDate) : new Date(0);
-            // Handle invalid dates
-            return (isNaN(dateB.getTime()) ? 0 : dateB.getTime()) - 
-                   (isNaN(dateA.getTime()) ? 0 : dateA.getTime());
+            return dateB - dateA;
           })
           .slice(0, 5)
           .map(student => ({
-            studentId: student.studentId || student.id || Math.random().toString(36).substring(2, 9),
+            studentId: student.studentId || student.id,
             name: `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Unknown Student',
-            course: student.course || "Enrolled", // Update if backend provides course data
+            course: "General Course", // You can enhance this based on your data
             date: student.enrollmentDate || new Date().toISOString(),
             status: student.status || 'active'
           }));
@@ -255,40 +247,28 @@ export default function AdminDashboard() {
           setError("Failed to load dashboard data. Please try refreshing the page.");
         }
 
-        // Consistent fallback data
-        setRecentStudents([
-          { studentId: 1, name: "Alex Johnson", course: "Advanced Mathematics", date: "2025-03-15", status: "active" },
-          { studentId: 2, name: "Sarah Williams", course: "Physics 101", date: "2025-03-14", status: "active" },
-          { studentId: 3, name: "Michael Brown", course: "Chemistry", date: "2025-03-12", status: "inactive" },
-          { studentId: 4, name: "Emily Davis", course: "Biology", date: "2025-03-10", status: "active" }
+        // Set fallback data
+        setStats([
+          { label: "Total Students", value: 0, change: "+0%", icon: "users" },
+          { label: "Active Courses", value: 0, change: "+0%", icon: "book" },
+          { label: "Fee Collection", value: "$0.00", change: "+0%", icon: "dollar" },
+          { label: "Pending Fees", value: "$0.00", change: "+0%", icon: "alert" }
         ]);
 
         setStatusData([
-          { name: 'Active', value: 3 },
-          { name: 'Inactive', value: 1 }
+          { name: 'Active', value: 1 },
+          { name: 'Inactive', value: 0 }
         ]);
 
-        setEnrollmentData([
-          { name: 'Jan', students: 10 },
-          { name: 'Feb', students: 15 },
-          { name: 'Mar', students: 20 },
-          { name: 'Apr', students: 12 },
-          { name: 'May', students: 8 },
-          { name: 'Jun', students: 5 },
-          { name: 'Jul', students: 0 },
-          { name: 'Aug', students: 0 },
-          { name: 'Sep', students: 0 },
-          { name: 'Oct', students: 0 },
-          { name: 'Nov', students: 0 },
-          { name: 'Dec', students: 0 }
-        ]);
+        setEnrollmentData(
+          ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            .map(month => ({ name: month, students: 0 }))
+        );
         
-        setStats([
-          { label: "Total Students", value: 4, change: "+12%", icon: "users" },
-          { label: "New Registrations", value: 3, change: "+3", icon: "user-plus" },
-          { label: "Fee Collection", value: "$4000.00", change: "+15%", icon: "dollar" },
-          { label: "Pending Fees", value: "$1000.00", change: "-5%", icon: "alert" }
-        ]);
+        setFeeData(
+          ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            .map(month => ({ name: month, collected: 0, pending: 0 }))
+        );
       } finally {
         setLoading(false);
       }
@@ -347,6 +327,7 @@ export default function AdminDashboard() {
   };
 
   const COLORS = [THEME.primary, THEME.secondary, THEME.warning, THEME.danger, THEME.accent];
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 bg-gray-50 min-h-screen">
       <div className="bg-white rounded-xl shadow-md p-6 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -468,12 +449,87 @@ export default function AdminDashboard() {
         })}
       </div>
 
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Fee Collection Chart */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Fee Collection Overview</h3>
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={feeData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip formatter={(value) => [`$${value}`, '']} />
+                <Legend />
+                <Bar dataKey="collected" fill={THEME.success} name="Collected" />
+                <Bar dataKey="pending" fill={THEME.warning} name="Pending" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Student Status Pie Chart */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Student Status Distribution</h3>
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Enrollment Trends */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Monthly Enrollment Trends ({new Date().getFullYear()})</h3>
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={enrollmentData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Area type="monotone" dataKey="students" stroke={THEME.primary} fill={THEME.primary} fillOpacity={0.6} />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
       {/* New Registrations Section */}
       <div className="bg-white shadow-sm rounded-xl border border-gray-100 p-6 mb-8 hover:shadow-md transition-shadow duration-300">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">New Registrations</h2>
-            <p className="text-sm text-gray-500">Recent student and parent sign-ups</p>
+            <h2 className="text-xl font-bold text-gray-800">Recent Registrations</h2>
+            <p className="text-sm text-gray-500">New student and parent sign-ups in the last 30 days</p>
           </div>
           <Link
             to="/admin/student-management"
@@ -580,7 +636,7 @@ export default function AdminDashboard() {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
-                        <p className="text-gray-500 font-medium">No new registrations in the last 7 days.</p>
+                        <p className="text-gray-500 font-medium">No new registrations in the last 30 days.</p>
                       </div>
                     </td>
                   </tr>

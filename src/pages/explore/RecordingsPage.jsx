@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  getAllRecordedLessons,
-  searchLessons,
-  getLessonsBySubjectId
+  getAllRecordedLessons
+  // Removed searchLessons as it doesn't exist and isn't used
 } from '../../services/recordedLessonService';
 import { getAllSubjects } from '../../services/subjectService';
 
 export default function RecordingsPage() {
   const [recordingBundles, setRecordingBundles] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [allLessons, setAllLessons] = useState([]); // Store all lessons for filtering
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('all');
@@ -25,6 +25,9 @@ export default function RecordingsPage() {
           getAllRecordedLessons(),
           getAllSubjects()
         ]);
+        
+        // Store all lessons for filtering
+        setAllLessons(lessonsData || []);
         
         // Convert lessons to bundles format for compatibility
         const convertedBundles = formatLessonsAsBundles(lessonsData);
@@ -42,6 +45,13 @@ export default function RecordingsPage() {
 
     fetchData();
   }, []);
+
+  // Client-side function to filter lessons by subject
+  const getLessonsBySubject = (lessons, subjectName) => {
+    return lessons.filter(lesson => 
+      lesson.subject && lesson.subject.toLowerCase() === subjectName.toLowerCase()
+    );
+  };
 
   // Convert recorded lessons to bundles format for backward compatibility
   const formatLessonsAsBundles = (lessons) => {
@@ -121,41 +131,28 @@ export default function RecordingsPage() {
     
     return matchesSearch && matchesSubject && matchesLevel;
   });
-  // Update subject filter effect
+
+  // Update subject filter effect - using client-side filtering
   useEffect(() => {
-    const updateBundlesBySubject = async () => {
+    const updateBundlesBySubject = () => {
       if (selectedSubject === 'all') {
-        // If 'all' is selected, just refetch everything
-        try {
-          const lessonsData = await getAllRecordedLessons();
-          setRecordingBundles(formatLessonsAsBundles(lessonsData) || mockRecordingBundles);
-        } catch (error) {
-          console.error("Error fetching all recordings:", error);
-        }
+        // If 'all' is selected, use all lessons
+        const convertedBundles = formatLessonsAsBundles(allLessons);
+        setRecordingBundles(convertedBundles || mockRecordingBundles);
       } else {
-        // Get subject ID from selected subject
-        const subjectId = subjects.find(s => s.name === selectedSubject)?.id;
-        
-        if (subjectId) {
-          try {
-            setLoading(true);
-            const subjectLessons = await getLessonsBySubjectId(subjectId);
-            const convertedBundles = formatLessonsAsBundles(subjectLessons);
-            setRecordingBundles(convertedBundles || mockRecordingBundles);
-          } catch (error) {
-            console.error(`Error fetching recordings for subject ${selectedSubject}:`, error);
-          } finally {
-            setLoading(false);
-          }
-        }
+        // Filter lessons by selected subject
+        const subjectLessons = getLessonsBySubject(allLessons, selectedSubject);
+        const convertedBundles = formatLessonsAsBundles(subjectLessons);
+        setRecordingBundles(convertedBundles || mockRecordingBundles);
       }
     };
 
-    // Only run this if we have subjects loaded
-    if (subjects && subjects.length > 0) {
+    // Only run this if we have lessons loaded
+    if (allLessons && allLessons.length > 0) {
       updateBundlesBySubject();
     }
-  }, [selectedSubject, subjects]);
+  }, [selectedSubject, allLessons, subjects]);
+
   // Sort bundles
   const sortedBundles = [...filteredBundles].sort((a, b) => {
     if (sortBy === 'price-low') {
