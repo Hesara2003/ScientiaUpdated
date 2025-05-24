@@ -17,22 +17,22 @@ const Navigation = () => {
   }, []);
 
   const exploreLinks = [
-    { to: '/explore', label: 'All Explore', icon: '🌟' },
-    { to: '/explore/subjects', label: 'Subjects', icon: '📚' },
-    { to: '/explore/tutors', label: 'Tutors', icon: '👨‍🏫' },
-    { to: '/explore/recordings', label: 'Recordings', icon: '🎥' },
-    { to: '/explore/exams', label: 'Exams', icon: '📝' },
-    { to: '/explore/timetable', label: 'Timetable', icon: '📅' },
-    { to: '/explore/faq', label: 'FAQ', icon: '❓' },
-    { to: '/explore/about', label: 'About', icon: 'ℹ️' }
+    { to: '/explore', label: 'සියල්ල ගවේෂණය', icon: '🌟' },
+    { to: '/explore/subjects', label: 'විෂයයන්', icon: '📚' },
+    { to: '/explore/tutors', label: 'ගුරුවරුන්', icon: '👨‍🏫' },
+    { to: '/explore/recordings', label: 'පාඩම් පටිගත කිරීම්', icon: '🎥' },
+    { to: '/explore/exams', label: 'විභාග', icon: '📝' },
+    { to: '/explore/timetable', label: 'කාලසටහන', icon: '📅' },
+    { to: '/explore/faq', label: 'නිති අසන පැන', icon: '❓' },
+    { to: '/explore/about', label: 'අප ගැන', icon: 'ℹ️' }
   ];
 
   const navLinks = [
-    { href: '#featured-courses', label: 'Courses', icon: '📖' },
-    { href: '#our-tutors', label: 'Tutors', icon: '👩‍🏫' },
-    { href: '#exams-section', label: 'Exams', icon: '🎯' },
-    { href: '#timetable', label: 'Schedule', icon: '🕐' },
-    { href: '#about-us', label: 'About', icon: '💡' }
+    { href: '#featured-courses', label: 'පාඨමාලා', icon: '📖' },
+    { href: '#our-tutors', label: 'ගුරුවරුන්', icon: '👩‍🏫' },
+    { href: '#exams-section', label: 'විභාග', icon: '🎯' },
+    { href: '#timetable', label: 'කාලසටහන', icon: '🕐' },
+    { href: '#about-us', label: 'අප ගැන', icon: '💡' }
   ];
 
   return (
@@ -97,7 +97,7 @@ const Navigation = () => {
                 whileTap={{ scale: 0.95 }}
               >
                 <span className="text-base">🌍</span>
-                <span>Explore</span>
+                <span>ගවේෂණය</span>
                 <motion.svg 
                   className="w-4 h-4 transition-transform duration-300" 
                   fill="none" 
@@ -158,7 +158,7 @@ const Navigation = () => {
               onClick={() => navigate('/auth/login')}
               className="px-6 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all duration-300"
             >
-              Sign In
+              පිවිසෙන්න
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }}
@@ -166,7 +166,7 @@ const Navigation = () => {
               onClick={() => navigate('/auth/register')}
               className="px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl shadow-lg transition-all duration-300"
             >
-              Get Started
+              ආරම්භ කරන්න
             </motion.button>
           </div>
 
@@ -224,7 +224,7 @@ const Navigation = () => {
 
                 {/* Mobile Explore Section */}
                 <div className="px-4 py-2">
-                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Explore</div>
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">ගවේෂණය</div>
                   <div className="grid grid-cols-2 gap-2">
                     {exploreLinks.map((link, index) => (
                       <motion.div
@@ -260,7 +260,7 @@ const Navigation = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
                   >
-                    Sign In
+                    පිවිසෙන්න
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
@@ -274,7 +274,7 @@ const Navigation = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
                   >
-                    Get Started Free
+                    නොමිලේ ආරම්භ කරන්න
                   </motion.button>
                 </div>
               </div>

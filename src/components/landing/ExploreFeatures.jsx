@@ -8,69 +8,69 @@ const ExploreFeatures = ({ containerVariants, itemVariants }) => {
   const features = [
     {
       id: 'subjects',
-      title: 'Browse Subjects',
-      description: 'Explore our comprehensive range of subjects from Mathematics to Literature with detailed course information.',
+      title: 'විෂයයන් ගවේෂණය කරන්න',
+      description: 'ගණිතය සිට සාහිත්‍යය දක්වා අපගේ විස්තරාත්මක පාඨමාලා තොරතුරු සමඟින් සම්පූර්ණ විෂය පරාසයක් ගවේෂණය කරන්න.',
       icon: '📚',
       gradient: 'from-blue-500 to-cyan-500',
       bgColor: 'bg-blue-50',
       iconColor: 'text-blue-600',
       link: '/explore/subjects',
-      stats: '50+ Subjects'
+      stats: 'විෂයයන් 50+'
     },
     {
       id: 'tutors',
-      title: 'Meet Our Tutors',
-      description: 'Connect with experienced educators and find the perfect tutor to guide your academic journey.',
+      title: 'අපගේ ගුරුවරුන් හමුවන්න',
+      description: 'පළපුරුදු අධ්‍යාපනඥයන් සමඟ සම්බන්ධ වී ඔබේ අධ්‍යාපනික ගමන මග පෙන්වීමට නියම ගුරුවරයා සොයා ගන්න.',
       icon: '👨‍🏫',
       gradient: 'from-green-500 to-emerald-500',
       bgColor: 'bg-green-50',
       iconColor: 'text-green-600',
       link: '/explore/tutors',
-      stats: '500+ Tutors'
+      stats: 'ගුරුවරුන් 500+'
     },
     {
       id: 'recordings',
-      title: 'Premium Recordings',
-      description: 'Access our library of recorded lessons and comprehensive course bundles for self-paced learning.',
+      title: 'වටිනා පටිගත කිරීම්',
+      description: 'ස්වයං-වේගයෙන් ඉගෙනීම සඳහා අපගේ පටිගත කළ පාඩම් පුස්තකාලය සහ සම්පූර්ණ පාඨමාලා වෙත ප්‍රවේශ වන්න.',
       icon: '🎥',
       gradient: 'from-purple-500 to-pink-500',
       bgColor: 'bg-purple-50',
       iconColor: 'text-purple-600',
       link: '/explore/recordings',
-      stats: '1000+ Videos'
+      stats: 'වීඩියෝ 1000+'
     },
     {
       id: 'timetable',
-      title: 'Class Schedule',
-      description: 'View detailed class timetables and find the perfect schedule that fits your availability.',
+      title: 'පන්ති කාලසටහන',
+      description: 'විස්තරාත්මක පන්ති කාලසටහන් බලා ඔබේ පහසුවට ගැලපෙන නියම කාලසටහන සොයා ගන්න.',
       icon: '📅',
       gradient: 'from-orange-500 to-red-500',
       bgColor: 'bg-orange-50',
       iconColor: 'text-orange-600',
       link: '/explore/timetable',
-      stats: 'Flexible Times'
+      stats: 'නම්‍යශීලී වේලාවන්'
     },
     {
       id: 'faq',
-      title: 'FAQ & Support',
-      description: 'Find answers to common questions and get the help you need to make the most of our platform.',
+      title: 'නිති අසන පැන සහ සහාය',
+      description: 'අපගේ වේදිකාවෙන් උපරිම ප්‍රයෝජන ගැනීමට අවශ්‍ය පිළිතුරු සහ උපකාර ලබා ගන්න.',
       icon: '❓',
       gradient: 'from-teal-500 to-cyan-500',
       bgColor: 'bg-teal-50',
       iconColor: 'text-teal-600',
       link: '/explore/faq',
-      stats: '24/7 Support'
+      stats: '24/7 සහාය'
     },
     {
       id: 'about',
-      title: 'About Scientia',
-      description: 'Learn about our mission, values, and commitment to providing quality education for all students.',
+      title: 'Scientia ගැන',
+      description: 'සියලුම සිසුන් සඳහා ගුණාත්මක අධ්‍යාපනයක් ලබා දීම සඳහා අපගේ මෙහෙවර, වටිනාකම් සහ කැපවීම ගැන දැන ගන්න.',
       icon: 'ℹ️',
       gradient: 'from-indigo-500 to-blue-500',
       bgColor: 'bg-indigo-50',
       iconColor: 'text-indigo-600',
       link: '/explore/about',
-      stats: 'Our Story'
+      stats: 'අපගේ කතාව'
     }
   ];
 
@@ -93,18 +93,17 @@ const ExploreFeatures = ({ containerVariants, itemVariants }) => {
         >
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium mb-6">
             <span className="mr-2">🌟</span>
-            Comprehensive Learning Platform
+            සර්වාංග ඉගෙනුම් වේදිකාව
           </div>
           <h2 className="text-4xl md:text-6xl font-bold text-white mb-6">
-            Explore Our Educational
+            අපගේ අධ්‍යාපනික
             <br />
             <span className="bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent">
-              Universe
+              විශ්වය ගවේෂණය කරන්න
             </span>
           </h2>
           <p className="max-w-3xl mx-auto text-xl text-blue-100 leading-relaxed">
-            Discover comprehensive learning resources, expert tutors, interactive schedules, 
-            and premium content designed for your academic success and career growth.
+            ඔබේ අධ්‍යාපනික සාර්ථකත්වය සහ වෘත්තීය වර්ධනය සඳහා නිර්මාණය කරන ලද සම්පූර්ණ ඉගෙනුම් සම්පත්, විශේෂඥ ගුරුවරුන්, අන්තර්ක්‍රියාකාරී කාලසටහන් සහ ප්‍රමුඛ අන්තර්ගතයන් සොයා ගන්න.
           </p>
         </motion.div>
 
@@ -201,9 +200,9 @@ const ExploreFeatures = ({ containerVariants, itemVariants }) => {
           className="text-center mt-16"
         >
           <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 border border-white/20 max-w-2xl mx-auto">
-            <h3 className="text-2xl font-bold text-white mb-4">Ready to Start Learning?</h3>
+            <h3 className="text-2xl font-bold text-white mb-4">ඉගෙනීම ආරම්භ කිරීමට සූදානම්ද?</h3>
             <p className="text-blue-100 mb-6">
-              Join thousands of students who have transformed their academic journey with Scientia
+              Scientia සමඟ ඔවුන්ගේ අධ්‍යාපනික ගමන පරිවර්තනය කර ඇති දහස් ගණන් සිසුන්ට සම්බන්ධ වන්න
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.div
@@ -215,7 +214,7 @@ const ExploreFeatures = ({ containerVariants, itemVariants }) => {
                   className="inline-flex items-center px-8 py-4 bg-white text-indigo-600 font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group"
                 >
                   <span className="mr-2">🚀</span>
-                  Explore All Features
+                  සියලුම විශේෂාංග ගවේෂණය කරන්න
                   <svg className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
@@ -229,7 +228,7 @@ const ExploreFeatures = ({ containerVariants, itemVariants }) => {
                   to="/auth/register"
                   className="inline-flex items-center px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white font-semibold rounded-2xl hover:bg-white/20 transition-all duration-300"
                 >
-                  Get Started Free
+                  නොමිලේ ආරම්භ කරන්න
                 </Link>
               </motion.div>
             </div>
