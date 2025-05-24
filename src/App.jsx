@@ -104,7 +104,9 @@ import TuteListParent from "./pages/parent/tutorials/TuteListParent";
 import ChildTutorials from "./pages/parent/tutorials/ChildTutorials";
 
 import RecordingsStudent from '../src/pages/student/Recordings';
+import PaymentGateway from './components/student/PaymentGateway';
 
+import ProgressReport from './pages/tutor/ProgressReport';
 
 // App Routes component using the auth context
 const AppRoutes = () => {
@@ -240,6 +242,7 @@ const AppRoutes = () => {
         <Route path="tutorials" element={<ProtectedRoute role="STUDENT"><TuteList /></ProtectedRoute>} />
         <Route path="my-tutorials" element={<ProtectedRoute role="STUDENT"><MyTutorials /></ProtectedRoute>} />
         <Route path="tutorial/:id" element={<ProtectedRoute role="STUDENT"><TutorialDetail /></ProtectedRoute>} />
+        <Route path="payment" element={<PaymentGateway />} />
       </Route>
       
       {/* Tutor Routes */}
@@ -256,6 +259,7 @@ const AppRoutes = () => {
         <Route path="students" element={<TutorStudents />} />
         <Route path="schedule" element={<TutorSchedule />} />
         <Route path="subjects" element={<TutorSubjects />} />        <Route path="assignments" element={<TutorAssignments />} />
+        <Route path="progress-reports" element={<ProgressReport />} />
         <Route path="materials" element={<TutorMaterials />} />
         <Route path="messages" element={<TutorMessages />} />
         <Route path="recordings" element={<TutorRecordings />} />

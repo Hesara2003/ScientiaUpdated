@@ -1,83 +1,105 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAllExams, formatExamData } from '../../services/examService';
 
 export default function Exams() {
   const [upcomingExams, setUpcomingExams] = useState([]);
   const [pastExams, setPastExams] = useState([]);
   const [selectedExam, setSelectedExam] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
-  // In a real application, you would fetch this data from an API
+  // Helper function to determine if an exam is upcoming or past
+  const isUpcomingExam = (startTime) => {
+    const now = new Date();
+    const examDate = new Date(startTime);
+    return examDate > now;
+  };
+
+  // Transform API exam data to component format
+  const transformExamData = (exam) => {
+    const formattedExam = formatExamData(exam);
+    const isUpcoming = isUpcomingExam(formattedExam.startTime);
+    
+    if (isUpcoming) {
+      return {
+        id: formattedExam.examId,
+        title: formattedExam.examName,
+        course: formattedExam.className || 'Unknown Course',
+        date: formattedExam.startTime.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        }),
+        time: `${formattedExam.startTime.toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })} - ${formattedExam.endTime.toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })}`,
+        location: "TBD", // You might want to add location field to your exam entity
+        status: "Upcoming",
+        tutor: formattedExam.tutorName || 'Unknown Tutor',
+        duration: formattedExam.duration,
+        syllabus: [
+          "To be announced" // You might want to add syllabus field to your exam entity
+        ]
+      };
+    } else {
+      return {
+        id: formattedExam.examId,
+        title: formattedExam.examName,
+        course: formattedExam.className || 'Unknown Course',
+        date: formattedExam.startTime.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        }),
+        score: "Pending", // You might want to add score field to your exam entity
+        grade: "Pending", // You might want to add grade field to your exam entity
+        feedback: "Feedback will be available once graded.", // You might want to add feedback field
+        tutor: formattedExam.tutorName || 'Unknown Tutor'
+      };
+    }
+  };
+
+  // Fetch exams from API
   useEffect(() => {
-    // Simulating API call with setTimeout
-    setTimeout(() => {
-      setUpcomingExams([
-        { 
-          id: 1, 
-          title: "Advanced Mathematics Midterm",
-          course: "Advanced Mathematics",
-          date: "May 25, 2025",
-          time: "09:00 AM - 11:00 AM",
-          location: "Hall A",
-          status: "Upcoming",
-          syllabus: [
-            "Limits and Continuity",
-            "Differentiation",
-            "Applications of Derivatives",
-            "Integration",
-            "Applications of Integration"
-          ]
-        },
-        { 
-          id: 2, 
-          title: "Physics 101 Practical Exam",
-          course: "Physics 101",
-          date: "May 27, 2025",
-          time: "01:00 PM - 03:00 PM",
-          location: "Science Lab",
-          status: "Upcoming",
-          syllabus: [
-            "Mechanics",
-            "Thermodynamics",
-            "Wave Phenomena",
-            "Electricity and Magnetism",
-            "Optics"
-          ]
+    const fetchExams = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const examsData = await getAllExams();
+        console.log('Fetched exams:', examsData);
+        
+        if (Array.isArray(examsData)) {
+          const transformedExams = examsData.map(transformExamData);
+          
+          // Separate upcoming and past exams
+          const upcoming = transformedExams.filter(exam => exam.status === 'Upcoming');
+          const past = transformedExams.filter(exam => exam.status !== 'Upcoming');
+          
+          setUpcomingExams(upcoming);
+          setPastExams(past);
+        } else {
+          console.warn('Exams data is not an array:', examsData);
+          setUpcomingExams([]);
+          setPastExams([]);
         }
-      ]);
-      
-      setPastExams([
-        { 
-          id: 3, 
-          title: "English Literature Essay",
-          course: "English Literature",
-          date: "April 15, 2025",
-          score: "92/100",
-          grade: "A",
-          feedback: "Excellent analysis of the literary themes. Your arguments were well-supported with textual evidence. Work on transitioning between paragraphs more smoothly."
-        },
-        { 
-          id: 4, 
-          title: "Physics Quiz 3",
-          course: "Physics 101",
-          date: "April 5, 2025",
-          score: "78/100",
-          grade: "C+",
-          feedback: "Good understanding of basic concepts, but needs improvement on problem-solving techniques. Review chapters 4-5 and practice more problem sets."
-        },
-        { 
-          id: 5, 
-          title: "Mathematics Test 2",
-          course: "Advanced Mathematics",
-          date: "March 28, 2025",
-          score: "85/100",
-          grade: "B",
-          feedback: "Strong work on calculus problems. Need to improve on understanding of linear algebra concepts. Continue practicing matrix operations."
-        }
-      ]);
-      
-      setLoading(false);
-    }, 800);
+      } catch (err) {
+        console.error('Error fetching exams:', err);
+        setError('Failed to load exams. Please try again later.');
+        // Fallback to empty arrays
+        setUpcomingExams([]);
+        setPastExams([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExams();
   }, []);
 
   // Animation variants
@@ -139,6 +161,27 @@ export default function Exams() {
         <p className="text-gray-600">View your upcoming exams and past results</p>
       </header>
 
+      {/* Error handling */}
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex">
+            <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+              <h3 className="text-sm font-medium text-red-800">Error loading exams</h3>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="text-sm text-red-800 underline mt-2"
+              >
+                Try again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="space-y-6">
           <div className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
@@ -185,7 +228,7 @@ export default function Exams() {
                     <motion.div 
                       key={exam.id}
                       variants={itemVariants}
-                      className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-shadow"
+                      className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
                       onClick={() => setSelectedExam(exam)}
                     >
                       <div className="p-5">
@@ -193,6 +236,9 @@ export default function Exams() {
                           <div>
                             <h3 className="text-lg font-semibold text-gray-800">{exam.title}</h3>
                             <p className="text-sm text-gray-500">{exam.course}</p>
+                            {exam.tutor && (
+                              <p className="text-xs text-gray-400">Tutor: {exam.tutor}</p>
+                            )}
                           </div>
                           <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                             daysUntil <= 3 ? 'bg-red-100 text-red-800' :
@@ -222,7 +268,7 @@ export default function Exams() {
                         
                         <div className="flex justify-between items-center">
                           <div className="text-xs text-gray-500">
-                            {exam.syllabus.length} topics
+                            {exam.syllabus?.length || 0} topics
                           </div>
                           <button className="px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm">
                             View Details
@@ -254,7 +300,7 @@ export default function Exams() {
                   <motion.div 
                     key={exam.id}
                     variants={itemVariants}
-                    className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-shadow"
+                    className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
                     onClick={() => setSelectedExam(exam)}
                   >
                     <div className="p-5">
@@ -262,16 +308,22 @@ export default function Exams() {
                         <h3 className="text-lg font-semibold text-gray-800">{exam.title}</h3>
                         <p className="text-sm text-gray-500">{exam.course}</p>
                         <p className="text-xs text-gray-500 mt-1">{exam.date}</p>
+                        {exam.tutor && (
+                          <p className="text-xs text-gray-400">Tutor: {exam.tutor}</p>
+                        )}
                       </div>
                       
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-end gap-2">
                           <span className="text-xl font-bold">
-                            {exam.score.split('/')[0]}
+                            {exam.score === 'Pending' ? 'N/A' : exam.score.split('/')[0]}
                           </span>
-                          <span className="text-gray-500 text-sm">/ {exam.score.split('/')[1]}</span>
+                          {exam.score !== 'Pending' && (
+                            <span className="text-gray-500 text-sm">/ {exam.score.split('/')[1]}</span>
+                          )}
                         </div>
                         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                          exam.grade === 'Pending' ? 'bg-gray-100 text-gray-800' :
                           exam.grade.startsWith('A') ? 'bg-green-100 text-green-800' :
                           exam.grade.startsWith('B') ? 'bg-cyan-100 text-cyan-800' :
                           exam.grade.startsWith('C') ? 'bg-amber-100 text-amber-800' :
@@ -342,6 +394,12 @@ export default function Exams() {
                             <p className="text-xs text-gray-500">Location</p>
                             <p className="text-sm font-medium text-gray-800">{selectedExam.location}</p>
                           </div>
+                          {selectedExam.tutor && (
+                            <div className="col-span-2">
+                              <p className="text-xs text-gray-500">Tutor</p>
+                              <p className="text-sm font-medium text-gray-800">{selectedExam.tutor}</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -349,14 +407,21 @@ export default function Exams() {
                     <div className="mb-6">
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Syllabus Coverage</h4>
                       <ul className="bg-gray-50 rounded-lg p-4 space-y-2">
-                        {selectedExam.syllabus.map((topic, index) => (
+                        {selectedExam.syllabus?.map((topic, index) => (
                           <li key={index} className="flex items-center">
                             <svg className="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                             <span className="text-sm text-gray-800">{topic}</span>
                           </li>
-                        ))}
+                        )) || (
+                          <li className="flex items-center">
+                            <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span className="text-sm text-gray-500">Syllabus details to be announced</span>
+                          </li>
+                        )}
                       </ul>
                     </div>
                     

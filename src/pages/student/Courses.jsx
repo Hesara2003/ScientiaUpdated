@@ -1,114 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { getAllClasses } from '../../services/classService';
+import { getAllClasses, normalizeClassData } from '../../services/classService';
 import SubjectBrowser from '../../components/subjects/SubjectBrowser';
 
 export default function Courses() {
-  const [courses, setCourses] = useState([]);  const [loading, setLoading] = useState(true);
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [activeTab, setActiveTab] = useState('materials');  
-  const [currentView, setCurrentView] = useState('enrolled'); // 'enrolled' or 'browse'// Fetch courses using the class service
+  const [currentView, setCurrentView] = useState('enrolled'); // 'enrolled' or 'browse'
+
+  // Transform API class data to match component format
+  const transformClassToCourse = (classData) => {
+    const normalized = normalizeClassData(classData);
+    if (!normalized) return null;
+
+    return {
+      id: normalized.classId,
+      title: normalized.className || 'Untitled Course',
+      teacher: normalized.firstname || 'Unknown Teacher',
+      schedule: 'Schedule not available', // You might want to add schedule field to your class entity
+      progress: Math.floor(Math.random() * 100), // Mock progress - you might want to add this to your backend
+      image: `https://source.unsplash.com/random/400x200/?education&sig=${normalized.classId}`,
+      description: normalized.description || 'No description available',
+      price: normalized.price || 0,
+      tutorId: normalized.tutorId,
+      materials: [], // You might want to add materials relationship to your class entity
+      assignments: [] // You might want to add assignments relationship to your class entity
+    };
+  };
+
+  // Fetch courses using the class service
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        // Get all classes from the API
-        const classes = await getAllClasses();
+        setError(null);
         
-        // If classes are returned from the API, transform them to match our UI needs
-        if (classes && classes.length > 0) {
-          setCourses(classes.map(cls => ({
-            id: cls.id,
-            title: cls.name || 'Untitled Course',
-            teacher: cls.tutorName || 'Unknown Teacher',
-            schedule: cls.schedule || 'Schedule not available',
-            progress: cls.progress || 0,
-            image: "https://source.unsplash.com/random/400x200/?education",
-            description: cls.description || 'No description available',
-            materials: [],
-            assignments: []
-          })));
+        console.log('Fetching classes from API...');
+        const classes = await getAllClasses();
+        console.log('Fetched classes:', classes);
+        
+        if (Array.isArray(classes) && classes.length > 0) {
+          // Transform the API classes to match our UI needs
+          const transformedCourses = classes
+            .map(transformClassToCourse)
+            .filter(course => course !== null); // Filter out any failed transformations
+          
+          setCourses(transformedCourses);
+          console.log(`Successfully transformed ${transformedCourses.length} courses`);
         } else {
-          // Otherwise, use mock data
-          setCourses([
-            {
-              id: 1,
-              title: "Advanced Mathematics",
-              teacher: "Dr. Robert Chen",
-              schedule: "Mon, Wed, Fri - 10:00 AM",
-              progress: 68,
-              image: "https://source.unsplash.com/random/400x200/?math",
-              description: "This course covers advanced topics in mathematics including calculus, linear algebra, and differential equations.",
-              materials: [
-                { title: "Calculus Textbook", type: "PDF", date: "2025-02-10" },
-                { title: "Linear Algebra Notes", type: "PDF", date: "2025-03-15" },
-                { title: "Formula Sheet", type: "PDF", date: "2025-04-05" }
-              ],
-              assignments: [
-                { title: "Problem Set 6", dueDate: "2025-05-15", status: "Submitted" },
-                { title: "Problem Set 7", dueDate: "2025-05-20", status: "Pending" },
-            { title: "Midterm Project", dueDate: "2025-05-30", status: "Pending" }
-          ]
-        },
-        {
-          id: 2,
-          title: "Physics 101",
-          teacher: "Prof. Sarah Williams",
-          schedule: "Tue, Thu - 11:30 AM",
-          progress: 75,
-          image: "https://source.unsplash.com/random/400x200/?physics",
-          description: "An introductory course to physics covering mechanics, thermodynamics, and wave phenomena.",
-          materials: [
-            { title: "Physics Fundamentals Textbook", type: "PDF", date: "2025-02-12" },
-            { title: "Lab Manual", type: "PDF", date: "2025-03-20" },
-            { title: "Lecture Slides", type: "PPT", date: "2025-04-10" }
-          ],
-          assignments: [
-            { title: "Lab Report 3", dueDate: "2025-05-12", status: "Submitted" },
-            { title: "Lab Report 4", dueDate: "2025-05-19", status: "Pending" },
-            { title: "Midterm Exam", dueDate: "2025-05-25", status: "Pending" }
-          ]
-        },
-        {
-          id: 3,
-          title: "English Literature",
-          teacher: "Ms. Angela Davis",
-          schedule: "Mon, Thu - 2:00 PM",
-          progress: 90,
-          image: "https://source.unsplash.com/random/400x200/?books",
-          description: "A survey of major works of English literature from the Renaissance to the modern period.",
-          materials: [
-            { title: "Anthology of English Literature", type: "PDF", date: "2025-02-15" },
-            { title: "Shakespeare's Collected Works", type: "PDF", date: "2025-03-25" },
-            { title: "Literary Analysis Guide", type: "PDF", date: "2025-04-15" }
-          ],
-          assignments: [
-            { title: "Essay on Shakespeare", dueDate: "2025-05-10", status: "Submitted" },
-            { title: "Poetry Analysis", dueDate: "2025-05-18", status: "Submitted" },
-            { title: "Final Essay Draft", dueDate: "2025-05-22", status: "Pending" }
-          ]
+          console.warn('No classes returned from API, using fallback');
+          setCourses([]);
         }
-      ]);
-        }
-        setLoading(false);
       } catch (error) {
         console.error('Error fetching courses:', error);
-        // Use mock data in case of error
-        setCourses([
-          {
-            id: 1,
-            title: "Advanced Mathematics",
-            teacher: "Dr. Robert Chen",
-            schedule: "Mon, Wed, Fri - 10:00 AM",
-            progress: 68,
-            image: "https://source.unsplash.com/random/400x200/?math",
-            description: "This course covers advanced topics in mathematics including calculus, linear algebra, and differential equations.",
-            materials: [],
-            assignments: []
-          }
-        ]);
+        setError('Failed to load courses. Please try again later.');
+        
+        // Fallback to empty array instead of mock data
+        setCourses([]);
+      } finally {
         setLoading(false);
       }
     };
@@ -178,6 +132,27 @@ export default function Courses() {
         <p className="text-gray-600">View your enrolled courses and access course materials</p>
       </header>
 
+      {/* Error handling */}
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex">
+            <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <div>
+              <h3 className="text-sm font-medium text-red-800">Error loading courses</h3>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="text-sm text-red-800 underline mt-2"
+              >
+                Try again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Search bar */}
       <div className="relative mb-6">
         <input
@@ -216,8 +191,12 @@ export default function Courses() {
               <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
               </svg>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">No courses found</h3>
-              <p className="text-gray-500">Try adjusting your search term</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-1">
+                {error ? 'Failed to load courses' : 'No courses found'}
+              </h3>
+              <p className="text-gray-500">
+                {error ? 'Please check your connection and try again' : 'Try adjusting your search term or check back later'}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -243,6 +222,13 @@ export default function Courses() {
                         {course.progress}% Complete
                       </span>
                     </div>
+                    {course.price > 0 && (
+                      <div className="absolute top-0 left-0 m-2">
+                        <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-blue-100 text-blue-800">
+                          ${course.price}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="p-4">
@@ -260,7 +246,8 @@ export default function Courses() {
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center mt-4">                      <div className="text-xs text-gray-500">
+                    <div className="flex justify-between items-center mt-4">
+                      <div className="text-xs text-gray-500">
                         {course.assignments && course.assignments.filter(a => a.status === 'Pending').length} pending assignments
                       </div>
                       <Link to={`/explore/classes/${course.id}`} className="px-3 py-1 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 text-sm">
@@ -301,6 +288,12 @@ export default function Courses() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
                   </svg>
                 </button>
+
+                {selectedCourse.price > 0 && (
+                  <div className="absolute top-4 left-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    ${selectedCourse.price}
+                  </div>
+                )}
               </div>
               
               <div className="p-6">
@@ -309,6 +302,12 @@ export default function Courses() {
                   <span>Instructor: {selectedCourse.teacher}</span>
                   <span className="mx-2">•</span>
                   <span>{selectedCourse.schedule}</span>
+                  {selectedCourse.tutorId && (
+                    <>
+                      <span className="mx-2">•</span>
+                      <span>Tutor ID: {selectedCourse.tutorId}</span>
+                    </>
+                  )}
                 </div>
                 
                 <p className="text-gray-700 mb-6">{selectedCourse.description}</p>
@@ -331,7 +330,13 @@ export default function Courses() {
                 {activeTab === 'materials' && (
                   <div className="bg-white border border-gray-200 rounded-lg">
                     {!selectedCourse.materials || selectedCourse.materials.length === 0 ? (
-                      <div className="p-4 text-center text-gray-500">No materials available</div>
+                      <div className="p-8 text-center text-gray-500">
+                        <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p>No materials available yet</p>
+                        <p className="text-sm text-gray-400 mt-1">Course materials will appear here when added</p>
+                      </div>
                     ) : (
                       <div className="divide-y divide-gray-100">
                         {selectedCourse.materials.map((material, index) => (
@@ -365,7 +370,13 @@ export default function Courses() {
                 {activeTab === 'assignments' && (
                   <div className="bg-white border border-gray-200 rounded-lg">
                     {!selectedCourse.assignments || selectedCourse.assignments.length === 0 ? (
-                      <div className="p-4 text-center text-gray-500">No assignments available</div>
+                      <div className="p-8 text-center text-gray-500">
+                        <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        <p>No assignments available yet</p>
+                        <p className="text-sm text-gray-400 mt-1">Course assignments will appear here when created</p>
+                      </div>
                     ) : (
                       <div className="divide-y divide-gray-100">
                         {selectedCourse.assignments.map((assignment, index) => (
