@@ -93,14 +93,14 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
         >
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-purple-100 text-purple-700 text-sm font-medium mb-4">
             <span className="mr-2">🎥</span>
-            Self-Paced Learning
+            ස්වයං-වේගයෙන් ඉගෙනීම
           </div>
           <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-4">
-            Premium Recording Bundles
+            වටිනා පටිගත කිරීම් එකතු
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Master subjects at your own pace with our comprehensive recorded lesson bundles, 
-            featuring expert instruction and lifetime access
+            අපගේ සවිස්තරාත්මක පටිගත කළ පාඩම් එකතු සමඟ ඔබේම වේගයෙන් විෂයයන් ප්‍රවීණ කරගන්න, 
+            විශේෂඥ උපදෙස් සහ ජීවිත කාලය පුරා ප්‍රවේශය සමඟ
           </p>
         </motion.div>
 
@@ -113,10 +113,22 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
           className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16"
         >
           {[
-            { number: '500+', label: 'Video Lessons' },
-            { number: '50+', label: 'Course Bundles' },
-            { number: '10K+', label: 'Students Learning' },
-            { number: '4.8★', label: 'Average Rating' }
+            {
+              number: '500+',
+              label: 'වීඩියෝ පාඩම්'
+            },
+            {
+              number: '50+',
+              label: 'පාඨමාලා එකතු'
+            },
+            {
+              number: '10K+',
+              label: 'සිසුන් ඉගෙනුම'
+            },
+            {
+              number: '4.8★',
+              label: 'සාමාන්‍ය ශ්‍රේණිගත කිරීම'
+            }
           ].map((stat, index) => (
             <div key={index} className="text-center p-4 bg-white/70 backdrop-blur-sm rounded-2xl shadow-md border border-white/20">
               <div className="text-2xl md:text-3xl font-bold text-purple-600 mb-1">{stat.number}</div>
@@ -131,7 +143,7 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
               <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200"></div>
               <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-purple-600 absolute top-0 left-0"></div>
             </div>
-            <p className="mt-4 text-gray-600">Loading premium content...</p>
+            <p className="mt-4 text-gray-600">වටිනා අන්තර්ගතය පූරණය වෙමින්...</p>
           </div>
         ) : recordedLessons.length > 0 ? (
           <motion.div 
@@ -157,7 +169,7 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                     {lesson.thumbnail && (
                       <img 
                         src={lesson.thumbnail}
-                        alt={lesson.title || 'Course thumbnail'}
+                        alt={lesson.title || 'පාඨමාලා සිහිකටයන'}
                         className="absolute inset-0 w-full h-full object-cover opacity-30"
                         onError={(e) => {
                           e.target.style.display = 'none';
@@ -199,17 +211,20 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                     <div className="absolute top-4 left-4 flex gap-2">
                       {lesson.bestSeller && (
                         <span className="px-3 py-1 bg-gradient-to-r from-orange-400 to-red-500 text-white text-xs font-bold rounded-full shadow-lg">
-                          🏆 Best Seller
+                          🏆 වැඩිම විකුණුම්
                         </span>
                       )}
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(level)}`}>
-                        {level.charAt(0).toUpperCase() + level.slice(1)}
+                        {level === 'beginner' ? 'ආරම්භක' : 
+                         level === 'intermediate' ? 'මධ්‍යම' : 
+                         level === 'advanced' ? 'උසස්' : 
+                         level.charAt(0).toUpperCase() + level.slice(1)}
                       </span>
                     </div>
 
                     {/* Price */}
                     <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-gray-900 px-4 py-2 rounded-2xl font-bold text-lg shadow-lg">
-                      ${lesson.price || '99'}
+                      රු.{(lesson.price || '99') * 300}
                     </div>
 
                     {/* Play Button */}
@@ -227,8 +242,18 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
 
                     {/* Subject Tag */}
                     <div className="absolute bottom-4 left-4 text-white">
-                      <div className="text-sm opacity-80">Subject</div>
-                      <div className="text-xl font-bold">{lesson.subject || 'General'}</div>
+                      <div className="text-sm opacity-80">විෂයය</div>
+                      <div className="text-xl font-bold">
+                        {lesson.subject === 'Mathematics' ? 'ගණිතය' :
+                         lesson.subject === 'Physics' ? 'භෞතික විද්‍යාව' :
+                         lesson.subject === 'Chemistry' ? 'රසායන විද්‍යාව' :
+                         lesson.subject === 'Biology' ? 'ජීව විද්‍යාව' :
+                         lesson.subject === 'Computer Science' ? 'පරිගණක විද්‍යාව' :
+                         lesson.subject === 'Literature' ? 'සාහිත්‍යය' :
+                         lesson.subject === 'History' ? 'ඉතිහාසය' :
+                         lesson.subject === 'Geography' ? 'භූගෝල විද්‍යාව' :
+                         lesson.subject || 'පොදු'}
+                      </div>
                     </div>
                   </div>
 
@@ -349,10 +374,10 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
         >
           <div className="bg-white/80 backdrop-blur-lg rounded-3xl p-8 shadow-xl border border-white/20 max-w-2xl mx-auto">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Ready to Start Learning?
+              ඉගෙනීම ආරම්භ කිරීමට සූදානම්ද?
             </h3>
             <p className="text-gray-600 mb-6">
-              Join thousands of students mastering subjects through our premium recorded content
+              අපගේ වාරික පටිගත කළ අන්තර්ගතය හරහා විෂයයන් ප්‍රගුණ කරන දහස් ගණනක් සිසුන් සමඟ එක්වන්න
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -361,7 +386,7 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                   className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group"
                 >
                   <span className="mr-2">🎥</span>
-                  Browse All Recordings
+                  සියලුම පටිගත කිරීම් පිරික්සන්න
                   <svg className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
@@ -372,7 +397,7 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                   to="/auth/register"
                   className="inline-flex items-center px-8 py-3 border-2 border-purple-200 text-purple-600 font-semibold rounded-2xl hover:bg-purple-50 transition-all duration-300"
                 >
-                  Start Free Trial
+                  නොමිලේ අත්හදා බැලීම ආරම්භ කරන්න
                 </Link>
               </motion.div>
             </div>

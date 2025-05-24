@@ -44,30 +44,30 @@ const SubjectsPreview = ({ subjects = [], classes = [], loading = false, getClas
     ).length;
   };
 
-  // Enhanced subject icon mapping
+  // Enhanced subject icon mapping with Sinhala subject names
   const getSubjectIcon = (subject) => {
     const subjectName = (subject.subjectName || subject.name || '').toLowerCase();
     const iconMap = {
-      'mathematics': '🔢',
-      'math': '🔢',
-      'physics': '⚛️',
-      'chemistry': '🧪',
-      'biology': '🧬',
-      'english': '📖',
-      'literature': '📚',
-      'history': '📜',
-      'geography': '🗺️',
-      'computer science': '💻',
-      'programming': '💻',
-      'art': '🎨',
-      'music': '🎵',
-      'science': '🔬',
-      'social studies': '🌍',
-      'economics': '💰',
-      'business': '💼',
-      'psychology': '🧠',
-      'philosophy': '🤔',
-      'language': '🗣️'
+      'ගණිතය': '🔢', // ගණිතය
+      'math': '🔢', // ගණිතය
+      'physics': '⚛️', // භෞතික විද්‍යාව
+      'chemistry': '🧪', // රසායන විද්‍යාව
+      'biology': '🧬', // ජීව විද්‍යාව
+      'english': '📖', // ඉංග්‍රීසි
+      'literature': '📚', // සාහිත්‍යය
+      'history': '📜', // ඉතිහාසය
+      'geography': '🗺️', // භූගෝල විද්‍යාව
+      'computer science': '💻', // පරිගණක විද්‍යාව
+      'programming': '💻', // ක්‍රමලේඛන
+      'art': '🎨', // කලාව
+      'music': '🎵', // සංගීතය
+      'science': '🔬', // විද්‍යාව
+      'social studies': '🌍', // සමාජ අධ්‍යයනය
+      'economics': '💰', // ආර්ථික විද්‍යාව
+      'business': '💼', // ව්‍යාපාර
+      'psychology': '🧠', // මනෝ විද්‍යාව
+      'philosophy': '🤔', // දර්ශනය
+      'language': '🗣️' // භාෂාව
     };
 
     for (const [key, icon] of Object.entries(iconMap)) {
