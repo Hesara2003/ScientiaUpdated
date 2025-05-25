@@ -219,7 +219,7 @@ export default function ExploreDashboard() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl mb-4">
-              Why Choose EduLearn Hub?
+              Why Choose Scientia?
             </h2>
             <p className="max-w-2xl mx-auto text-xl text-gray-500">
               Discover the benefits of our comprehensive learning platform

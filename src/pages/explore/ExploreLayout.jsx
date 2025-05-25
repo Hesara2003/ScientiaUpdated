@@ -17,7 +17,7 @@ export default function ExploreLayout() {
                 whileHover={{ scale: 1.05 }}
               >
                 <Link to="/explore" className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  EduLearn Hub
+                  Scientia
                 </Link>
               </motion.div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
@@ -90,7 +90,7 @@ export default function ExploreLayout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-lg font-semibold mb-4">EduLearn Hub</h3>
+              <h3 className="text-lg font-semibold mb-4">Scientia</h3>
               <p className="text-gray-400 text-sm">
                 Empowering students to achieve academic excellence through innovative learning solutions.
               </p>
