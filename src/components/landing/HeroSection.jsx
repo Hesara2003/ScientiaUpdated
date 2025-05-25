@@ -18,7 +18,6 @@ const HeroSection = () => {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 overflow-hidden">
-      {/* Animated Background Elements */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-20 w-64 h-64 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute top-40 right-32 w-48 h-48 bg-blue-300/10 rounded-full blur-2xl animate-bounce"></div>
@@ -26,7 +25,6 @@ const HeroSection = () => {
         <div className="absolute bottom-20 right-20 w-40 h-40 bg-indigo-300/10 rounded-full blur-2xl"></div>
       </div>
 
-      {/* Floating Cards */}
       {floatingCards.map((card, index) => (
         <motion.div
           key={index}
@@ -72,7 +70,6 @@ const HeroSection = () => {
             සෑම සතියකම නව පාඨමාලා එකතු කරයි
           </motion.div>
 
-          {/* Main Heading */}
           <motion.h1 
             className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight"
             initial={{ opacity: 0, y: 20 }}
@@ -86,7 +83,6 @@ const HeroSection = () => {
             </span>
           </motion.h1>
 
-          {/* Description */}
           <motion.p 
             className="mt-6 max-w-3xl mx-auto text-xl text-blue-100 leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
@@ -97,7 +93,6 @@ const HeroSection = () => {
             Scientia සමඟ ඔවුන්ගේ වෘත්තීය ජීවිතය පරිවර්තනය කර ඇති දහස් ගණන් ඉගෙනුම් ලබන්නන්ට සම්බන්ධ වන්න.
           </motion.p>
 
-          {/* Stats */}
           <motion.div
             className="flex justify-center space-x-8 my-12"
             initial={{ opacity: 0, y: 20 }}
@@ -112,7 +107,6 @@ const HeroSection = () => {
             ))}
           </motion.div>
 
-          {/* CTA Buttons */}
           <motion.div 
             className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-lg mx-auto"
             initial={{ opacity: 0, y: 20 }}
@@ -157,7 +151,6 @@ const HeroSection = () => {
             </motion.div>
           </motion.div>
 
-          {/* Trust Indicators */}
           <motion.div
             className="mt-16 flex flex-wrap justify-center items-center gap-8 opacity-80"
             initial={{ opacity: 0 }}
@@ -178,25 +171,79 @@ const HeroSection = () => {
             </div>
           </motion.div>
 
-          {/* Scroll Indicator */}
           <motion.div
-            className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+            className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 1 }}
           >
-            <div className="flex flex-col items-center text-white/60 py-1">
-              <span className="text-sm mb-2">ගවේෂණය කිරීමට අනුචලනය කරන්න</span>
+            <motion.div 
+              className="flex flex-col items-center text-white/80 py-2"
+              whileHover={{ scale: 1.1 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            >
+              <span className="text-sm mb-2 font-medium tracking-wide backdrop-blur-sm px-3 py-1 rounded-full bg-white/10">ගවේෂණය කිරීමට අනුචලනය කරන්න</span>
               <motion.div
-                animate={{ y: [0, 8, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                className="bg-white/20 backdrop-blur-md rounded-full p-2 border border-white/30 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all duration-300"
+                animate={{ 
+                  y: [0, 8, 0],
+                  boxShadow: [
+                    "0 0 0 0 rgba(129, 140, 248, 0)",
+                    "0 0 0 10px rgba(129, 140, 248, 0.2)",
+                    "0 0 0 0 rgba(129, 140, 248, 0)"
+                  ]
+                }}
+                transition={{ 
+                  duration: 2, 
+                  repeat: Infinity,
+                  boxShadow: {
+                    duration: 2,
+                    repeat: Infinity
+                  }
+                }}
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                 </svg>
               </motion.div>
-            </div>
+            </motion.div>
           </motion.div>
+          
+          {/* Decorative waves at the bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-24 overflow-hidden z-10">
+            <svg className="absolute bottom-0 w-full h-24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+              <path fill="rgba(255, 255, 255, 0.03)" fillOpacity="1" d="M0,128L48,144C96,160,192,192,288,186.7C384,181,480,139,576,138.7C672,139,768,181,864,181.3C960,181,1056,139,1152,122.7C1248,107,1344,117,1392,122.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+            </svg>
+            <svg className="absolute bottom-0 w-full h-16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+              <path fill="rgba(255, 255, 255, 0.05)" fillOpacity="1" d="M0,256L48,240C96,224,192,192,288,181.3C384,171,480,181,576,176C672,171,768,149,864,149.3C960,149,1056,171,1152,176C1248,181,1344,171,1392,165.3L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+            </svg>
+          </div>
+          
+          {/* Floating particles */}
+          <div className="absolute inset-0 pointer-events-none">
+            {[...Array(15)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute rounded-full bg-white/20"
+                style={{
+                  width: Math.random() * 6 + 2,
+                  height: Math.random() * 6 + 2,
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                }}
+                animate={{
+                  y: [0, Math.random() * -30 - 10],
+                  opacity: [0, 0.5, 0]
+                }}
+                transition={{
+                  duration: Math.random() * 2 + 2,
+                  repeat: Infinity,
+                  repeatType: "loop",
+                  delay: Math.random() * 5
+                }}
+              />
+            ))}
+          </div>
         </motion.div>
       </div>
     </div>

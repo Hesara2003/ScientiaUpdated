@@ -55,13 +55,13 @@ const SubjectsPreview = ({ subjects = [], classes = [], loading = false, getClas
       'biology': '🧬', // ජීව විද්‍යාව
       'english': '📖', // ඉංග්‍රීසි
       'literature': '📚', // සාහිත්‍යය
-      'history': '📜', // ඉතිහාසය
+      'ඉතිහාසය': '📜', // ඉතිහාසය
       'geography': '🗺️', // භූගෝල විද්‍යාව
       'computer science': '💻', // පරිගණක විද්‍යාව
       'programming': '💻', // ක්‍රමලේඛන
       'art': '🎨', // කලාව
       'music': '🎵', // සංගීතය
-      'science': '🔬', // විද්‍යාව
+      'විද්‍යාව': '🔬', // විද්‍යාව
       'social studies': '🌍', // සමාජ අධ්‍යයනය
       'economics': '💰', // ආර්ථික විද්‍යාව
       'business': '💼', // ව්‍යාපාර
@@ -75,7 +75,7 @@ const SubjectsPreview = ({ subjects = [], classes = [], loading = false, getClas
         return icon;
       }
     }
-    return '📚'; // Default fallback
+    return '📚'; 
   };
 
   const getSubjectGradient = (index) => {
@@ -93,7 +93,6 @@ const SubjectsPreview = ({ subjects = [], classes = [], loading = false, getClas
   };
 
   const handleSubjectClick = (subject) => {
-    // For landing page, redirect to register to encourage sign-up
     navigate('/auth/register', { 
       state: { 
         redirectTo: `/explore/subjects/${subject.subjectId || subject.id}`,
@@ -254,7 +253,6 @@ const SubjectsPreview = ({ subjects = [], classes = [], loading = false, getClas
           </motion.div>
         )}
         
-        {/* Enhanced CTA Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

@@ -177,10 +177,8 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                       />
                     )}
                     
-                    {/* Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/80 via-blue-600/80 to-indigo-700/80"></div>
                     
-                    {/* Pattern Overlay for better visual appeal */}
                     <div className="absolute inset-0 opacity-10">
                       <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                         <defs>
@@ -192,7 +190,6 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                       </svg>
                     </div>
                     
-                    {/* Subject Icon as Visual Element */}
                     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-10">
                       <div className="text-8xl text-white">
                         {lesson.subject === 'Mathematics' ? '📐' :
@@ -207,7 +204,6 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                       </div>
                     </div>
 
-                    {/* Badges */}
                     <div className="absolute top-4 left-4 flex gap-2">
                       {lesson.bestSeller && (
                         <span className="px-3 py-1 bg-gradient-to-r from-orange-400 to-red-500 text-white text-xs font-bold rounded-full shadow-lg">
@@ -222,12 +218,10 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                       </span>
                     </div>
 
-                    {/* Price */}
                     <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-gray-900 px-4 py-2 rounded-2xl font-bold text-lg shadow-lg">
                       රු.{(lesson.price || '99') * 300}
                     </div>
 
-                    {/* Play Button */}
                     <div className="absolute inset-0 flex items-center justify-center">
                       <motion.div
                         whileHover={{ scale: 1.1 }}
@@ -240,7 +234,6 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                       </motion.div>
                     </div>
 
-                    {/* Subject Tag */}
                     <div className="absolute bottom-4 left-4 text-white">
                       <div className="text-sm opacity-80">විෂයය</div>
                       <div className="text-xl font-bold">
@@ -258,7 +251,6 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                   </div>
 
                   <div className="p-6">
-                    {/* Title and Rating */}
                     <div className="mb-4">
                       <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors duration-300">
                         {lesson.title || lesson.bundleName || 'Premium Course Bundle'}
@@ -278,12 +270,10 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                       </div>
                     </div>
 
-                    {/* Description */}
                     <p className="text-gray-600 text-sm mb-6 line-clamp-2 leading-relaxed">
                       {lesson.description || 'Comprehensive course bundle with expert instruction and lifetime access'}
                     </p>
 
-                    {/* Course Details */}
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       <div className="flex items-center text-sm text-gray-600">
                         <svg className="w-4 h-4 text-purple-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -311,7 +301,6 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                       </div>
                     </div>
 
-                    {/* Features */}
                     <div className="flex flex-wrap gap-2 mb-6">
                       {['HD Quality', 'Mobile Access', 'Downloadable'].map((feature, idx) => (
                         <span key={idx} className="px-3 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-full">
@@ -320,7 +309,6 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
                       ))}
                     </div>
 
-                    {/* Action Button */}
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -364,7 +352,6 @@ const RecordingsSection = ({ containerVariants, itemVariants }) => {
           </motion.div>
         )}
         
-        {/* Enhanced CTA Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

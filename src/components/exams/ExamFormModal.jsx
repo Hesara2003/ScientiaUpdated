@@ -1,231 +1,290 @@
 import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Calendar, Clock, BookOpen, User } from 'lucide-react';
+import { getAllClasses } from '../../services/classService';
+import { getAllTutors } from '../../services/tutorService';
 
 const ExamFormModal = ({ show, onClose, onSubmit, examData }) => {
-  const initialFormData = {
-    subject: '',
-    date: '',
-    time: '',
-    duration: '',
-    maxMarks: '',
-    description: ''
-  };
-
-  const [formData, setFormData] = useState(initialFormData);
+  const [formData, setFormData] = useState({
+    examName: '',
+    classId: '',
+    tutorId: '',
+    startTime: '',
+    endTime: '',
+  });
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [classes, setClasses] = useState([]);
+  const [tutors, setTutors] = useState([]);
+  const [loadingClasses, setLoadingClasses] = useState(false);
+  const [loadingTutors, setLoadingTutors] = useState(false);
 
   useEffect(() => {
-    if (examData) {
-      const formattedData = { ...examData };
-      if (formattedData.date) {
-        const dateObj = new Date(formattedData.date);
-        formattedData.date = dateObj.toISOString().split('T')[0];
+    const fetchClassesAndTutors = async () => {
+      try {
+        setLoadingClasses(true);
+        const classesData = await getAllClasses();
+        setClasses(classesData || []);
+      } catch (error) {
+        console.error('Error fetching classes:', error);
+        setClasses([]);
+      } finally {
+        setLoadingClasses(false);
       }
-      setFormData(formattedData);
-    } else {
-      setFormData(initialFormData);
-    }
-  }, [examData]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-    
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: ''
+      try {
+        setLoadingTutors(true);
+        const tutorsData = await getAllTutors();
+        console.log('Fetched tutors:', tutorsData);
+        setTutors(tutorsData || []);
+      } catch (error) {
+        console.error('Error fetching tutors:', error);
+        setTutors([]);
+      } finally {
+        setLoadingTutors(false);
+      }
+    };
+
+    if (show) {
+      fetchClassesAndTutors();
+    }
+  }, [show]);
+
+  useEffect(() => {
+    console.log('Received examData:', examData);
+    if (examData) {
+      setFormData({
+        examName: examData.examName || '',
+        classId: examData.classId ? String(examData.classId) : '',
+        tutorId: examData.tutorId ? String(examData.tutorId) : '',
+        startTime: examData.startTime ? new Date(examData.startTime).toISOString().slice(0, 16) : '',
+        endTime: examData.endTime ? new Date(examData.endTime).toISOString().slice(0, 16) : '',
+      });
+    } else {
+      setFormData({
+        examName: '',
+        classId: '',
+        tutorId: '',
+        startTime: '',
+        endTime: '',
       });
     }
-  };
+    setErrors({});
+  }, [examData]);
 
   const validateForm = () => {
     const newErrors = {};
-    
-    if (!formData.subject.trim()) {
-      newErrors.subject = 'Subject is required';
+    if (!formData.examName.trim()) newErrors.examName = 'Exam name is required';
+    if (!formData.classId) newErrors.classId = 'Class is required';
+    if (!formData.tutorId) newErrors.tutorId = 'Tutor is required';
+    else if (isNaN(parseInt(formData.tutorId))) newErrors.tutorId = 'Invalid tutor selection';
+    if (!formData.startTime) newErrors.startTime = 'Start time is required';
+    if (!formData.endTime) newErrors.endTime = 'End time is required';
+    if (formData.startTime && formData.endTime && new Date(formData.startTime) >= new Date(formData.endTime)) {
+      newErrors.endTime = 'End time must be after start time';
     }
-    
-    if (!formData.date) {
-      newErrors.date = 'Date is required';
-    }
-    
-    if (!formData.time) {
-      newErrors.time = 'Time is required';
-    }
-    
-    if (!formData.duration) {
-      newErrors.duration = 'Duration is required';
-    } else if (isNaN(formData.duration) || Number(formData.duration) <= 0) {
-      newErrors.duration = 'Duration must be a positive number';
-    }
-    
-    if (!formData.maxMarks) {
-      newErrors.maxMarks = 'Maximum marks are required';
-    } else if (isNaN(formData.maxMarks) || Number(formData.maxMarks) <= 0) {
-      newErrors.maxMarks = 'Maximum marks must be a positive number';
-    }
-    
+    console.log('Validation errors:', newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      const processedFormData = {
-        ...formData,
-        duration: Number(formData.duration),
-        maxMarks: Number(formData.maxMarks)
+    console.log('Form submitted with data:', formData);
+    if (!validateForm()) {
+      console.log('Validation failed:', errors);
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const formattedData = {
+        ...(examData?.id && { id: examData.id }),
+        examName: formData.examName.trim(),
+        classId: parseInt(formData.classId),
+        tutorId: parseInt(formData.tutorId),
+        startTime: new Date(formData.startTime).toISOString(),
+        endTime: new Date(formData.endTime).toISOString(),
       };
-      onSubmit(processedFormData);
+      console.log('Submitting formatted data:', formattedData);
+      
+      await onSubmit(formattedData);
+      
+      console.log('Exam submitted successfully');
+      onClose();
+    } catch (error) {
+      console.error('Error submitting exam:', error);
+      setErrors({ submit: `Failed to submit exam: ${error.message || 'Please try again.'}` });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (!show) return null;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    setErrors({ ...errors, [name]: '' });
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-800">
-            {examData ? 'Edit Exam' : 'Add New Exam'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        >
+          <motion.div
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.9, y: 20 }}
+            className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6"
           >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-indigo-600">
+                {examData ? 'Edit Exam' : 'Add New Exam'}
+              </h2>
+              <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                <X size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <BookOpen size={16} className="mr-2 text-indigo-500" />
+                  Exam Name
+                </label>
+                <input
+                  type="text"
+                  name="examName"
+                  value={formData.examName}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-indigo-200 focus:border-indigo-500"
+                  placeholder="Enter exam name"
+                />
+                {errors.examName && (
+                  <p className="text-red-500 text-sm mt-1">{errors.examName}</p>
+                )}
+              </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="subject">
-              Subject
-            </label>
-            <input
-              type="text"
-              id="subject"
-              name="subject"
-              value={formData.subject}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md ${errors.subject ? 'border-red-500' : 'border-gray-300'}`}
-              placeholder="Enter exam subject"
-            />
-            {errors.subject && <p className="text-red-500 text-xs mt-1">{errors.subject}</p>}
-          </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <BookOpen size={16} className="mr-2 text-indigo-500" />
+                  Class
+                </label>
+                <select
+                  name="classId"
+                  value={formData.classId}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-indigo-200 focus:border-indigo-500"
+                  disabled={loadingClasses}
+                >
+                  <option value="">
+                    {loadingClasses ? 'Loading classes...' : 'Select a class'}
+                  </option>
+                  {classes.map((cls) => (
+                    <option key={cls.classId} value={cls.classId}>
+                      {cls.className || cls.name || `Class ${cls.classId}`}
+                    </option>
+                  ))}
+                </select>
+                {errors.classId && (
+                  <p className="text-red-500 text-sm mt-1">{errors.classId}</p>
+                )}
+              </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="date">
-              Date
-            </label>
-            <input
-              type="date"
-              id="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md ${errors.date ? 'border-red-500' : 'border-gray-300'}`}
-            />
-            {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
-          </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <User size={16} className="mr-2 text-indigo-500" />
+                  Tutor
+                </label>
+                <select
+                  name="tutorId"
+                  value={formData.tutorId}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-indigo-200 focus:border-indigo-500"
+                  disabled={loadingTutors}
+                >
+                  <option value="">
+                    {loadingTutors ? 'Loading tutors...' : 'Select a tutor'}
+                  </option>
+                  {tutors.map((tutor) => (
+                    <option key={tutor.tutorId} value={tutor.tutorId}>
+                      {tutor.firstName && tutor.lastName
+                        ? `${tutor.firstName} ${tutor.lastName}`
+                        : `Tutor ${tutor.tutorId}`}
+                    </option>
+                  ))}
+                </select>
+                {errors.tutorId && (
+                  <p className="text-red-500 text-sm mt-1">{errors.tutorId}</p>
+                )}
+              </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="time">
-              Time
-            </label>
-            <input
-              type="time"
-              id="time"
-              name="time"
-              value={formData.time}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md ${errors.time ? 'border-red-500' : 'border-gray-300'}`}
-            />
-            {errors.time && <p className="text-red-500 text-xs mt-1">{errors.time}</p>}
-          </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <Calendar size={16} className="mr-2 text-indigo-500" />
+                  Start Time
+                </label>
+                <input
+                  type="datetime-local"
+                  name="startTime"
+                  value={formData.startTime}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-indigo-200 focus:border-indigo-500"
+                />
+                {errors.startTime && (
+                  <p className="text-red-500 text-sm mt-1">{errors.startTime}</p>
+                )}
+              </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="duration">
-              Duration (minutes)
-            </label>
-            <input
-              type="number"
-              id="duration"
-              name="duration"
-              value={formData.duration}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md ${errors.duration ? 'border-red-500' : 'border-gray-300'}`}
-              placeholder="Enter duration in minutes"
-              min="1"
-            />
-            {errors.duration && <p className="text-red-500 text-xs mt-1">{errors.duration}</p>}
-          </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 flex items-center">
+                  <Clock size={16} className="mr-2 text-indigo-500" />
+                  End Time
+                </label>
+                <input
+                  type="datetime-local"
+                  name="endTime"
+                  value={formData.endTime}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-indigo-200 focus:border-indigo-500"
+                />
+                {errors.endTime && (
+                  <p className="text-red-500 text-sm mt-1">{errors.endTime}</p>
+                )}
+              </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="maxMarks">
-              Maximum Marks
-            </label>
-            <input
-              type="number"
-              id="maxMarks"
-              name="maxMarks"
-              value={formData.maxMarks}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md ${errors.maxMarks ? 'border-red-500' : 'border-gray-300'}`}
-              placeholder="Enter maximum marks"
-              min="1"
-            />
-            {errors.maxMarks && <p className="text-red-500 text-xs mt-1">{errors.maxMarks}</p>}
-          </div>
+              {errors.submit && (
+                <p className="text-red-500 text-sm mt-2">{errors.submit}</p>
+              )}
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
-              Description (Optional)
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description || ''}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              rows="3"
-              placeholder="Enter exam description"
-            ></textarea>
-          </div>
-
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-            >
-              {examData ? 'Update' : 'Create'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <motion.button
+                  type="submit"
+                  disabled={isSubmitting}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`px-4 py-2 text-white rounded-lg ${
+                    isSubmitting ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+                  }`}
+                >
+                  {isSubmitting ? 'Submitting...' : examData ? 'Update Exam' : 'Create Exam'}
+                </motion.button>
+              </div>
+            </form>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
-};
-
-ExamFormModal.propTypes = {
-  show: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onSubmit: PropTypes.func.isRequired,
-  examData: PropTypes.object
 };
 
 export default ExamFormModal;

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getAllExams, createExam, deleteExam } from '../services/examService';
+import { getAllExams, createExam, deleteExam, updateExam } from '../services/examService';
+import { getAllClasses } from '../services/classService';
+import { getAllTutors } from '../services/tutorService';
 import ExamFormModal from '../components/exams/ExamFormModal';
 import { Button } from '../components/Button';
 import { ExamCard } from '../components/ExamCard';
@@ -66,7 +68,6 @@ const Exams = () => {
       accent: 'from-purple-600 to-pink-600'
     }
   };
-
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -76,21 +77,30 @@ const Exams = () => {
   const [useMockData, setUseMockData] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSubject, setFilterSubject] = useState('all');
-
+  const [classes, setClasses] = useState([]);
+  const [tutors, setTutors] = useState([]);
   const fetchExams = async () => {
     setLoading(true);
     try {
-      const data = await getAllExams();
-      if (data.length === 0) {
+      const [examsData, classesData, tutorsData] = await Promise.all([
+        getAllExams(),
+        getAllClasses(),
+        getAllTutors()
+      ]);
+      
+      setClasses(classesData || []);
+      setTutors(tutorsData || []);
+      
+      if (examsData.length === 0) {
         setExams(mockExams);
         setUseMockData(true);
       } else {
-        setExams(data);
+        setExams(examsData);
         setUseMockData(false);
       }
       setError(null);
     } catch (err) {
-      console.error('Error fetching exams:', err);
+      console.error('Error fetching data:', err);
       setExams(mockExams);
       setUseMockData(true);
       setError('Failed to fetch exams. Showing mock data for visualization.');
@@ -101,11 +111,11 @@ const Exams = () => {
 
   useEffect(() => {
     fetchExams();
-  }, []);
-
-  const handleCreateExam = async (examData) => {
+  }, []);  const handleCreateExam = async (examData) => {
+    console.log('handleCreateExam called with:', examData);
     try {
-      await createExam(examData);
+      const result = await createExam(examData);
+      console.log('Exam created successfully:', result);
       setShowModal(false);
       setNotification({
         message: 'Exam created successfully!',
@@ -113,20 +123,39 @@ const Exams = () => {
       });
       fetchExams();
     } catch (err) {
+      console.error('Error creating exam:', err);
       setNotification({
         message: 'Failed to create exam. Please try again.',
         type: 'error'
       });
-      console.error('Error creating exam:', err);
     }
 
     setTimeout(() => setNotification({ message: '', type: '' }), 3000);
   };
 
-  const handleDeleteExam = async (id) => {
+  const handleUpdateExam = async (examData) => {
+    try {
+      await updateExam(currentExam.examId, examData);
+      setShowModal(false);
+      setNotification({
+        message: 'Exam updated successfully!',
+        type: 'success'
+      });
+      fetchExams();
+    } catch (err) {
+      setNotification({
+        message: 'Failed to update exam. Please try again.',
+        type: 'error'
+      });
+      console.error('Error updating exam:', err);
+    }
+
+    setTimeout(() => setNotification({ message: '', type: '' }), 3000);
+  };
+  const handleDeleteExam = async (examId) => {
     if (window.confirm('Are you sure you want to delete this exam?')) {
       try {
-        await deleteExam(id);
+        await deleteExam(examId);
         setNotification({
           message: 'Exam deleted successfully!',
           type: 'success'
@@ -153,15 +182,13 @@ const Exams = () => {
     setShowModal(false);
     setCurrentExam(null);
   };
-
   const handleSubmit = (examData) => {
     if (currentExam) {
-      console.log('Update exam:', examData);
+      handleUpdateExam(examData);
     } else {
       handleCreateExam(examData);
     }
   };
-
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -171,12 +198,51 @@ const Exams = () => {
     });
   };
 
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const calculateDuration = (startTime, endTime) => {
+    if (!startTime || !endTime) return 0;
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    return Math.round((end - start) / (1000 * 60)); // Duration in minutes
+  };
+
+  const getClassName = (classId) => {
+    const classObj = classes.find(cls => cls.classId === classId);
+    return classObj ? (classObj.className || classObj.name || `Class ${classId}`) : 'Unknown Class';
+  };
+
+  const getTutorName = (tutorId) => {
+    const tutor = tutors.find(t => t.tutorId === tutorId);
+    if (tutor) {
+      if (tutor.firstName && tutor.lastName) {
+        return `${tutor.firstName} ${tutor.lastName}`;
+      }
+      return tutor.name || `Tutor ${tutorId}`;
+    }
+    return 'Unknown Tutor';
+  };
   const filteredExams = exams.filter(exam => {
-    const matchesSearch = exam.subject.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterSubject === 'all' || exam.subject.toLowerCase() === filterSubject.toLowerCase();
+    // For mock data, use subject field; for real data, use examName or class name
+    const searchField = exam.subject || exam.examName || getClassName(exam.classId) || '';
+    const matchesSearch = searchField.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const filterField = exam.subject || getClassName(exam.classId) || '';
+    const matchesFilter = filterSubject === 'all' || filterField.toLowerCase() === filterSubject.toLowerCase();
+    
     return matchesSearch && matchesFilter;
   });
-  const subjects = ['all', ...new Set(exams.map(exam => exam.subject.toLowerCase()))];
+
+  // Get unique subjects for filter dropdown
+  const subjects = ['all', ...new Set(exams.map(exam => {
+    return exam.subject || getClassName(exam.classId) || 'Unknown';
+  }).map(s => s.toLowerCase()))];;
 
   // Animation variants
   const containerVariants = {
@@ -407,7 +473,7 @@ const Exams = () => {
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >              {filteredExams.map((exam) => (
                 <motion.div 
-                  key={exam.id} 
+                  key={exam.examId || exam.id} 
                   variants={itemVariants}
                   whileHover={{ y: -5, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)" }}
                   className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 border border-gray-100"
@@ -415,9 +481,11 @@ const Exams = () => {
                   <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 opacity-90"></div>
                     <div className="relative z-10 p-5 flex justify-between items-center">
-                      <h3 className="text-xl font-bold text-white truncate">{exam.subject}</h3>
+                      <h3 className="text-xl font-bold text-white truncate">
+                        {exam.examName || exam.subject || 'Unnamed Exam'}
+                      </h3>
                       <span className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white rounded-md text-xs font-medium">
-                        {exam.maxMarks} marks
+                        {exam.maxMarks || 'N/A'} marks
                       </span>
                     </div>
                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500"></div>
@@ -432,8 +500,10 @@ const Exams = () => {
                           </svg>
                         </div>
                         <div className="ml-3">
-                          <div className="text-xs text-gray-500 uppercase font-medium">Date</div>
-                          <div className="font-semibold">{formatDate(exam.date)}</div>
+                          <div className="text-xs text-gray-500 uppercase font-medium">Start Date</div>
+                          <div className="font-semibold">
+                            {exam.startTime ? formatDate(exam.startTime) : formatDate(exam.date)}
+                          </div>
                         </div>
                       </div>
                       
@@ -445,7 +515,9 @@ const Exams = () => {
                         </div>
                         <div className="ml-3">
                           <div className="text-xs text-gray-500 uppercase font-medium">Start Time</div>
-                          <div className="font-semibold">{exam.time}</div>
+                          <div className="font-semibold">
+                            {exam.startTime ? formatTime(exam.startTime) : exam.time}
+                          </div>
                         </div>
                       </div>
                       
@@ -457,16 +529,49 @@ const Exams = () => {
                         </div>
                         <div className="ml-3">
                           <div className="text-xs text-gray-500 uppercase font-medium">Duration</div>
-                          <div className="font-semibold">{exam.duration} minutes</div>
+                          <div className="font-semibold">
+                            {exam.startTime && exam.endTime 
+                              ? `${calculateDuration(exam.startTime, exam.endTime)} minutes`
+                              : `${exam.duration} minutes`
+                            }
+                          </div>
                         </div>
                       </div>
+
+                      {exam.classId && (
+                        <div className="flex items-center text-gray-700">
+                          <div className="p-2 bg-green-50 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h4a1 1 0 011 1v5m-6 0V9a1 1 0 011-1h4a1 1 0 011 1v11" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <div className="text-xs text-gray-500 uppercase font-medium">Class</div>
+                            <div className="font-semibold">{getClassName(exam.classId)}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {exam.tutorId && (
+                        <div className="flex items-center text-gray-700">
+                          <div className="p-2 bg-yellow-50 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <div className="text-xs text-gray-500 uppercase font-medium">Tutor</div>
+                            <div className="font-semibold">{getTutorName(exam.tutorId)}</div>
+                          </div>
+                        </div>
+                      )}
                       
                       <div className="mt-6 pt-6 border-t border-gray-100">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center">
                             <div className="h-2.5 w-2.5 rounded-full bg-green-500 mr-2"></div>
                             <span className="text-sm text-gray-600 font-medium">
-                              {new Date(exam.date) > new Date() ? 'Upcoming' : 'Completed'}
+                              {new Date(exam.startTime || exam.date) > new Date() ? 'Upcoming' : 'Completed'}
                             </span>
                           </div>
                           
@@ -484,7 +589,7 @@ const Exams = () => {
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
-                              onClick={() => handleDeleteExam(exam.id)}
+                              onClick={() => handleDeleteExam(exam.examId || exam.id)}
                               className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all flex items-center"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
