@@ -9,14 +9,11 @@ const BASE_URL = '/attendance';
  */
 export const getAllAttendanceRecords = async () => {
   try {
-    // Get the current role and token
     const userRole = localStorage.getItem('userRole');
     const token = localStorage.getItem('token');
     
-    // Always normalize role to uppercase
     const normalizedRole = userRole ? userRole.toUpperCase() : 'TUTOR';
     
-    // Add additional headers to ensure authorization works
     const headers = {
       'Authorization': `Bearer ${token}`,
       'X-User-Role': normalizedRole
@@ -24,7 +21,6 @@ export const getAllAttendanceRecords = async () => {
     
     console.log('Fetching attendance records with role:', normalizedRole);
     
-    // Try the standard endpoint first
     const response = await api.get(BASE_URL, { headers });
     
     if (response.status === 403) {
@@ -34,20 +30,17 @@ export const getAllAttendanceRecords = async () => {
     
     console.log('Raw attendance response:', response.data);
     
-    // Check if we have valid data 
     if (!response.data || !Array.isArray(response.data)) {
       console.warn('Invalid attendance data received:', response.data);
       return [];
     }
     
-    // Enhance records with student data
     const enhancedRecords = await enhanceAttendanceRecordsWithStudentData(response.data);
     console.log('Enhanced attendance records:', enhancedRecords);
     return enhancedRecords;
   } catch (error) {
     console.error('Error fetching attendance records:', error);
     console.error('Error response:', error.response?.data);
-    // Return empty array instead of throwing to prevent component crashes
     return [];
   }
 };
@@ -74,7 +67,6 @@ export const getAttendanceById = async (id) => {
  */
 export const createAttendance = async (attendance) => {
   try {
-    // Format the data to match backend expectations
     const attendanceData = {
       student: { studentId: attendance.studentId },
       classEntity: attendance.classId ? { classId: attendance.classId } : null,
@@ -103,7 +95,6 @@ export const createAttendance = async (attendance) => {
  */
 export const updateAttendance = async (id, attendance) => {
   try {
-    // Format the data to match backend expectations
     const attendanceData = {
       attendanceId: id,
       student: { studentId: attendance.studentId },
@@ -141,7 +132,6 @@ export const deleteAttendance = async (id) => {
  */
 export const bulkCreateAttendance = async (attendanceRecords) => {
   try {
-    // Format each record for the backend
     const formattedRecords = attendanceRecords.map(record => ({
       student: { studentId: record.studentId },
       classEntity: record.classId ? { classId: record.classId } : null,
@@ -190,12 +180,9 @@ const enhanceAttendanceRecordsWithStudentData = async (records) => {
       return [];
     }
     
-    // Create a map to cache student data and avoid duplicate requests
     const studentCache = new Map();
     
-    // Process all records asynchronously
     const enhancedRecords = await Promise.all(records.map(async (record) => {
-      // Extract studentId from the nested student object or direct property
       const studentId = record.student?.studentId || record.studentId;
       
       if (!studentId) {
@@ -209,7 +196,6 @@ const enhanceAttendanceRecordsWithStudentData = async (records) => {
       }
       
       try {
-        // Check if we already fetched this student
         if (!studentCache.has(studentId)) {
           const studentData = await getStudentById(studentId);
           studentCache.set(studentId, studentData);
@@ -217,7 +203,6 @@ const enhanceAttendanceRecordsWithStudentData = async (records) => {
         
         const student = studentCache.get(studentId);
         
-        // Return enhanced record with student data
         return {
           ...record,
           studentId: studentId,
@@ -243,6 +228,6 @@ const enhanceAttendanceRecordsWithStudentData = async (records) => {
     return enhancedRecords;
   } catch (error) {
     console.error('Error enhancing attendance records with student data:', error);
-    return records; // Fall back to original records if enhancement fails
+    return records; 
   }
 };

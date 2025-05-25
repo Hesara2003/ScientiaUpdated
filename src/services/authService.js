@@ -16,7 +16,6 @@ const setToken = (token) => {
   }
 };
 
-// Initialize authentication on app load
 const initAuth = () => {
   const token = localStorage.getItem('token');
   
