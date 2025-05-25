@@ -26,7 +26,6 @@ const FaqWidget = ({ category, limit = 3, title = "Frequently Asked Questions" }
           data = await getAllFaqs();
         }
         
-        // Limit the number of FAQs shown
         setFaqs(data.slice(0, limit));
         setLoading(false);
       } catch (err) {

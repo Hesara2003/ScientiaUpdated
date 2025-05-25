@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion'; // You may need to install this
+import { motion, AnimatePresence } from 'framer-motion'; 
 
 const FeeFormModal = ({ show, onClose, onSubmit, students = [] }) => {
   const [formData, setFormData] = useState({
@@ -14,9 +14,8 @@ const FeeFormModal = ({ show, onClose, onSubmit, students = [] }) => {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
-  const [activeStep, setActiveStep] = useState(1); // Add a step system for large forms
+  const [activeStep, setActiveStep] = useState(1);
 
-  // Reset form when modal is opened
   useEffect(() => {
     if (show) {
       setFormData({
@@ -39,7 +38,6 @@ const FeeFormModal = ({ show, onClose, onSubmit, students = [] }) => {
       [name]: value
     });
     
-    // Clear error for this field when user types
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -160,7 +158,6 @@ const FeeFormModal = ({ show, onClose, onSubmit, students = [] }) => {
             transition={{ type: 'spring', bounce: 0.25 }}
             className="relative mx-auto p-6 border w-full max-w-md bg-white rounded-xl shadow-2xl"
           >
-            {/* Header */}
             <div className="flex justify-between items-center mb-6 pb-3 border-b border-gray-200">
               <h3 className="text-2xl font-semibold text-gray-800 flex items-center">
                 <span className="bg-blue-100 text-blue-600 p-1.5 rounded-lg mr-3">
@@ -181,7 +178,6 @@ const FeeFormModal = ({ show, onClose, onSubmit, students = [] }) => {
               </button>
             </div>
 
-            {/* Progress steps for visual indication */}
             <div className="mb-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -253,7 +249,6 @@ const FeeFormModal = ({ show, onClose, onSubmit, students = [] }) => {
                     )}
                   </div>
 
-                  {/* Only show if not using student dropdown */}
                   {students.length === 0 && (
                     <div>
                       <label htmlFor="studentName" className="block text-sm font-medium text-gray-700 mb-1">Student Name</label>
@@ -374,7 +369,6 @@ const FeeFormModal = ({ show, onClose, onSubmit, students = [] }) => {
                     </div>
                   </div>
 
-                  {/* Fee Summary */}
                   <div className="mt-4 bg-gray-50 p-4 rounded-lg">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Fee Summary</h4>
                     <div className="space-y-1 text-sm">

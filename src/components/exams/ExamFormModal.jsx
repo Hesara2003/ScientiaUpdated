@@ -34,7 +34,6 @@ const ExamFormModal = ({ show, onClose, onSubmit, examData }) => {
       [name]: value
     });
     
-    // Clear validation error when user starts typing
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -77,7 +76,6 @@ const ExamFormModal = ({ show, onClose, onSubmit, examData }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      // Convert string values to appropriate types
       const processedFormData = {
         ...formData,
         duration: Number(formData.duration),

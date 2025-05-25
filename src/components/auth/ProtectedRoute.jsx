@@ -6,7 +6,6 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { isAuthenticated, user } = useAuth();
   const location = useLocation();
   
-  // Special handling for admin section - ensure admin role is set
   useEffect(() => {
     if (location.pathname.startsWith('/admin')) {
       localStorage.setItem('userRole', 'admin');
@@ -22,15 +21,12 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     user
   });
 
-  // Not authenticated - redirect to login
   if (!isAuthenticated) {
     console.log('Not authenticated, redirecting to login');
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
-  // Special handling for student pathway
   if (location.pathname.startsWith('/student')) {
-    // Check if user is registered as a student
     const lastRegisteredRole = localStorage.getItem('lastRegisteredRole');
     const storedRole = localStorage.getItem('userRole');
     
@@ -40,7 +36,6 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     }
   }
 
-  // Check if user has required role
   const hasAccess = checkRoleAccess(user, allowedRoles);
   
   if (!hasAccess) {
@@ -52,14 +47,11 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   return children;
 };
 
-// Helper function to check role access
 function checkRoleAccess(user, allowedRoles) {
-  // If no specific roles are required, allow access
   if (!allowedRoles || allowedRoles.length === 0) {
     return true;
   }
   
-  // Special case for admin paths - always use admin role
   const pathname = window.location.pathname;
   if (pathname.startsWith('/admin')) {
     console.log('Using admin role for admin path access check');
@@ -68,22 +60,18 @@ function checkRoleAccess(user, allowedRoles) {
     }
   }
   
-  // Get user role, prioritizing localStorage
   let userRole = localStorage.getItem('userRole');
   
-  // Fall back to user object if needed
   if (!userRole && user) {
     userRole = user.role;
   }
   
-  // Special case - override parent with student if registered as student
   if (userRole === 'parent' && localStorage.getItem('lastRegisteredRole') === 'student') {
     userRole = 'student';
   }
   
   console.log('Checking role access - User role:', userRole, 'Required roles:', allowedRoles);
   
-  // Check if user role is in allowed roles
   return allowedRoles.some(role => 
     userRole?.toLowerCase() === role.toLowerCase()
   );

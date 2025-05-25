@@ -20,7 +20,6 @@ const ShoppingCart = () => {
     if (currentUser?.id) {
       loadCartItems();
       
-      // Set up event listener for cart updates
       window.addEventListener('cartUpdated', loadCartItems);
       
       return () => {
@@ -71,7 +70,6 @@ const ShoppingCart = () => {
       return;
     }
     
-    // Navigate to checkout page
     navigate('/checkout');
   };
 

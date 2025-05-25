@@ -49,7 +49,6 @@ const FeaturedCourses = ({ classes, loading, containerVariants, itemVariants }) 
           </p>
         </motion.div>
 
-        {/* Category Filter */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -103,7 +102,6 @@ const FeaturedCourses = ({ classes, loading, containerVariants, itemVariants }) 
                   variants={itemVariants}
                   whileHover={{ y: -8 }}
                 >
-                  {/* Course Image/Header */}
                   <div className="relative h-48 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-700 overflow-hidden">
                     <div className="absolute inset-0 bg-black/20"></div>
                     <div className="absolute top-4 left-4">
@@ -124,12 +122,10 @@ const FeaturedCourses = ({ classes, loading, containerVariants, itemVariants }) 
                   </div>
 
                   <div className="p-6">
-                    {/* Course Title */}
                     <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-indigo-600 transition-colors duration-300">
                       {course.className || course.title || 'Comprehensive Learning Course'}
                     </h3>
 
-                    {/* Instructor Info */}
                     <div className="flex items-center mb-4">
                       <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold mr-3">
                         {(course.tutor?.firstName || course.tutor?.name || course.instructor || 'T')[0]}
@@ -142,7 +138,6 @@ const FeaturedCourses = ({ classes, loading, containerVariants, itemVariants }) 
                       </div>
                     </div>
 
-                    {/* Course Details */}
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-sm text-gray-600">
                         <svg className="w-4 h-4 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -158,7 +153,6 @@ const FeaturedCourses = ({ classes, loading, containerVariants, itemVariants }) 
                       </div>
                     </div>
 
-                    {/* Rating and Price */}
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center">
                         <div className="flex items-center text-yellow-400 mr-2">
@@ -173,7 +167,6 @@ const FeaturedCourses = ({ classes, loading, containerVariants, itemVariants }) 
                       </div>
                     </div>
 
-                    {/* Progress Bar */}
                     <div className="mb-4">
                       <div className="flex justify-between text-xs text-gray-600 mb-1">
                         <span>Course Progress</span>
@@ -187,7 +180,6 @@ const FeaturedCourses = ({ classes, loading, containerVariants, itemVariants }) 
                       </div>
                     </div>
 
-                    {/* Action Button */}
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -232,7 +224,6 @@ const FeaturedCourses = ({ classes, loading, containerVariants, itemVariants }) 
           </motion.div>
         )}
 
-        {/* View All Courses Button */}
         {classes.length > 6 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}

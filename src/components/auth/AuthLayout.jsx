@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 export default function AuthLayout() {
   const navigate = useNavigate();
     const handleGoHome = () => {
-    // Clear ALL authentication data when going back to home
     localStorage.removeItem('userRole');
     localStorage.removeItem('token');
     localStorage.removeItem('lastRegisteredRole');
@@ -13,21 +12,16 @@ export default function AuthLayout() {
     localStorage.removeItem('userData');
     localStorage.removeItem('userId');
     
-    // Set a flag to indicate we want to show the landing page
     localStorage.setItem('showLandingPage', 'true');
     
-    // Call the navigate after a small delay to ensure any auth state updates
     setTimeout(() => {
       navigate('/');
     }, 10);
   };
 
   const handleBackToHome = () => {
-    // Set flag for App.jsx to know we want the landing page
     localStorage.setItem('showLandingPage', 'true');
-    
-    // Clear any auth state that might be causing redirect loops
-    // Uncomment the next lines if you want to log out when going back to home
+
     // localStorage.removeItem('token');
     // localStorage.removeItem('userRole');
     // localStorage.removeItem('userData');
@@ -38,7 +32,6 @@ export default function AuthLayout() {
   
   return (
     <div className="h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Return to home link */}
       <button 
         onClick={handleGoHome}
         className="absolute top-4 left-4 flex items-center text-white bg-indigo-600 bg-opacity-90 hover:bg-opacity-100 px-3 py-1.5 rounded-lg z-10 transition-all text-sm"
@@ -49,10 +42,8 @@ export default function AuthLayout() {
         Back to Home
       </button>
       
-      {/* Background decorative elements */}
       <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-b-3xl opacity-90 z-0" />
       
-      {/* Animated background shapes - reduced size */}
       <motion.div 
         className="absolute top-20 left-10 w-48 h-48 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 z-0"
         animate={{ 
@@ -94,7 +85,6 @@ export default function AuthLayout() {
       />
       
       <div className="relative w-full max-w-5xl flex flex-col md:flex-row gap-4 z-10 h-auto max-h-[90vh]">
-        {/* Left sidebar with information - more compact */}
         <motion.div
           className="hidden md:flex flex-col w-1/3 text-white p-6 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-700 shadow-xl overflow-auto"
           initial={{ opacity: 0, x: -50 }}
@@ -191,7 +181,6 @@ export default function AuthLayout() {
           </motion.div>
         </motion.div>
         
-        {/* Main content area - more compact */}
         <motion.div
           className="flex-1 bg-white rounded-xl shadow-xl p-6 relative z-10 border border-gray-100 overflow-auto"
           initial={{ opacity: 0, y: 20 }}

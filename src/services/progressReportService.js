@@ -79,10 +79,35 @@ export const deleteProgressReport = async (reportId) => {
   }
 };
 
+/**
+ * Test function to add a progress report with your JSON format
+ * @returns {Promise<Object>} Created report with ID
+ */
+export const testAddProgressReport = async () => {
+  const progressReportData = {
+    studentId: 1,
+    classEntityId: 2,
+    attendancePercentage: 95.0,
+    averageScore: 88.5,
+    generatedAt: "2025-05-25T14:30:00"
+  };
+
+  try {
+    console.log('Sending progress report:', progressReportData);
+    const result = await addProgressReport(progressReportData);
+    console.log('Progress report created successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Failed to create progress report:', error);
+    throw error;
+  }
+};
+
 // Export all methods
 export default {
   addProgressReport,
   getAllProgressReports,
   getProgressReportById,
-  deleteProgressReport
+  deleteProgressReport,
+  testAddProgressReport
 };

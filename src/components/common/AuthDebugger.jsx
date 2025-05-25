@@ -2,12 +2,8 @@ import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 
-/**
- * A utility component to debug authentication and API issues
- * Only shown in development mode
- */
+
 const AuthDebugger = () => {
-  // Only show in development mode
   if (!import.meta.env.DEV) {
     return null;
   }
@@ -23,7 +19,6 @@ const AuthDebugger = () => {
         const result = window.checkCurrentToken();
         toast.success('Token info logged to console');
         
-        // Display token info
         if (!result) {
           setTestResult('No token found or token is invalid');
         } else {

@@ -2,7 +2,6 @@ import { Link, useLocation, Outlet } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Import admin pages...
 
 const AdminLayout = () => {
   const location = useLocation();
@@ -10,7 +9,6 @@ const AdminLayout = () => {
   const [scrolled, setScrolled] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   
-  // Ensure admin role when admin layout is loaded
   useEffect(() => {
     localStorage.setItem('userRole', 'admin');
     console.log('AdminLayout: Ensuring admin role is set');
@@ -96,21 +94,17 @@ const AdminLayout = () => {
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <div className="fixed inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 -z-10"></div>
       
-      {/* Sidebar for desktop */}
       <motion.aside 
         className={`hidden md:flex md:flex-col ${collapsed ? 'w-20' : 'w-72'} bg-white shadow-lg relative z-10 transition-all duration-300`}
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
       >
-        {/* Sidebar background decoration */}
         <div className="absolute inset-0 bg-gradient-to-b from-blue-50/50 to-purple-50/50 opacity-50"></div>
         <div className="absolute top-0 right-0 w-1/2 h-1/3 bg-gradient-to-br from-blue-100/20 to-indigo-200/20 rounded-bl-full"></div>
         <div className="absolute bottom-0 left-0 w-1/2 h-1/3 bg-gradient-to-tr from-purple-100/20 to-indigo-200/20 rounded-tr-full"></div>
         
-        {/* Sidebar content - relative to appear above the background */}
         <div className="relative z-10 flex flex-col h-full">
-          {/* Header with logo */}
           <div className="p-4 border-b border-gray-100/80 flex items-center justify-between">
             <motion.div 
               className="flex items-center"
@@ -131,7 +125,6 @@ const AdminLayout = () => {
               </Link>
             </motion.div>
             
-            {/* Toggle collapse button */}
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
@@ -146,7 +139,6 @@ const AdminLayout = () => {
             </motion.button>
           </div>
           
-          {/* Navigation */}
           <div className={`mt-5 px-4 flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent ${collapsed ? 'px-2' : 'px-4'}`}>
             {navCategories.map((category, categoryIndex) => (
               <div key={category.name} className={`mb-6 ${collapsed ? '' : ''}`}>
@@ -202,7 +194,6 @@ const AdminLayout = () => {
             ))}
           </div>
           
-          {/* User Profile & Login */}
           <div className={`mt-auto p-4 border-t border-gray-100/80 ${collapsed ? 'flex justify-center' : ''}`}>
             {collapsed ? (
               <motion.div 
@@ -246,7 +237,6 @@ const AdminLayout = () => {
         </div>
       </motion.aside>
       
-      {/* Mobile header with hamburger */}
       <motion.header 
         className="md:hidden fixed top-0 inset-x-0 h-16 bg-white/90 backdrop-blur-md shadow-sm z-50 flex items-center justify-between px-4"
         initial={{ y: -100 }}
@@ -284,7 +274,6 @@ const AdminLayout = () => {
         </motion.button>
       </motion.header>
       
-      {/* Mobile sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -369,7 +358,6 @@ const AdminLayout = () => {
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
       <div className={`flex flex-col flex-1 overflow-y-auto transition-all duration-300 ${collapsed ? 'md:ml-20' : 'md:ml-72'}`}>
         <motion.main 
           className="flex-grow p-4 md:p-6 pt-20 md:pt-6 max-w-7xl mx-auto w-full"
@@ -381,7 +369,6 @@ const AdminLayout = () => {
           <Outlet />
         </motion.main>
 
-        {/* Footer */}
         <motion.footer 
           className="bg-white/80 backdrop-blur-md border-t border-gray-200 p-4 md:p-6 text-center text-sm text-gray-600"
           initial={{ opacity: 0 }}

@@ -22,7 +22,6 @@ const ClassFormModal = ({ show, onClose, onSubmit, classData }) => {  const init
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Fetch subjects when component mounts
     const fetchSubjects = async () => {
       try {
         setLoading(true);

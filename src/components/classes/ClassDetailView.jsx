@@ -2,15 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { getClassById, enrollStudentInClass, getEnrolledStudents } from '../../services/classService';
 import { useParams, useNavigate } from 'react-router-dom';
 
-/**
- * Component for displaying detailed information about a class
- * Includes class details, tutor information, enrolled students,
- * and options for enrollment (for students) or management (for tutors/admins)
- */
+
 export default function ClassDetailView() {  const [classData, setClassData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('details'); // details, students, materials, attendance
+  const [activeTab, setActiveTab] = useState('details'); 
   const [enrolledStudents, setEnrolledStudents] = useState([]);
   const [enrolling, setEnrolling] = useState(false);
   const { id } = useParams();
@@ -22,13 +18,11 @@ export default function ClassDetailView() {  const [classData, setClassData] = u
         const data = await getClassById(id);
         setClassData(data);
         
-        // Fetch enrolled students
         try {
           const studentsData = await getEnrolledStudents(id);
           setEnrolledStudents(studentsData);
         } catch (err) {
           console.error('Error fetching enrolled students:', err);
-          // Continue with the class display even if student fetching fails
         }
         
         setLoading(false);
@@ -45,17 +39,14 @@ export default function ClassDetailView() {  const [classData, setClassData] = u
     try {
       setEnrolling(true);
       
-      // In a real app, you would get the student ID from auth context
-      // For now, we'll use a mock student ID
-      const studentId = 1; // Example student ID
+
+      const studentId = 1; 
       
       await enrollStudentInClass(id, studentId);
       
-      // Refresh the list of enrolled students
       const studentsData = await getEnrolledStudents(id);
       setEnrolledStudents(studentsData);
       
-      // Show success feedback
       alert('You have successfully enrolled in this class!');
       setEnrolling(false);
     } catch (err) {
@@ -113,7 +104,6 @@ export default function ClassDetailView() {  const [classData, setClassData] = u
   return (
     <div className="p-6">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">{classData.name}</h1>
@@ -148,7 +138,6 @@ export default function ClassDetailView() {  const [classData, setClassData] = u
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="border-b border-gray-200 mb-6">
           <div className="flex -mb-px">
             <button
@@ -194,7 +183,6 @@ export default function ClassDetailView() {  const [classData, setClassData] = u
           </div>
         </div>
 
-        {/* Content based on active tab */}
         <div className="bg-white shadow-sm rounded-lg p-6">
           {activeTab === 'details' && (
             <div>
@@ -272,7 +260,6 @@ export default function ClassDetailView() {  const [classData, setClassData] = u
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-medium text-gray-900">Class Materials</h2>
-                {/* Add button would be shown for tutors/admins */}
                 <button className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                   Add Material
                 </button>

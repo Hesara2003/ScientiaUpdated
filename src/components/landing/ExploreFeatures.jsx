@@ -76,7 +76,6 @@ const ExploreFeatures = ({ containerVariants, itemVariants }) => {
 
   return (
     <section className="relative py-20 bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 overflow-hidden">
-      {/* Background Elements */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-20 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-20 right-20 w-64 h-64 bg-purple-400/10 rounded-full blur-3xl animate-pulse"></div>
@@ -125,16 +124,13 @@ const ExploreFeatures = ({ containerVariants, itemVariants }) => {
             >
               <Link to={feature.link} className="block h-full">
                 <div className="relative h-full bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden border border-white/20 transition-all duration-500 group-hover:shadow-3xl">
-                  {/* Gradient Background */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}></div>
                   
-                  {/* Floating Icon Background */}
                   <div className="absolute top-6 right-6 opacity-10 text-6xl group-hover:scale-110 transition-transform duration-500">
                     {feature.icon}
                   </div>
 
                   <div className="relative p-8 h-full flex flex-col">
-                    {/* Icon and Stats */}
                     <div className="flex items-start justify-between mb-6">
                       <motion.div 
                         className={`flex items-center justify-center w-16 h-16 ${feature.bgColor} rounded-2xl shadow-lg`}
@@ -148,7 +144,6 @@ const ExploreFeatures = ({ containerVariants, itemVariants }) => {
                       </div>
                     </div>
 
-                    {/* Content */}
                     <div className="flex-grow">
                       <h3 className={`text-2xl font-bold text-gray-900 mb-3 group-hover:${feature.iconColor} transition-colors duration-300`}>
                         {feature.title}
@@ -158,7 +153,6 @@ const ExploreFeatures = ({ containerVariants, itemVariants }) => {
                       </p>
                     </div>
 
-                    {/* Action Area */}
                     <div className="pt-4 border-t border-gray-100">
                       <div className="flex items-center justify-between">
                         <span className={`font-semibold ${feature.iconColor} group-hover:text-gray-900 transition-colors duration-300`}>
@@ -176,7 +170,6 @@ const ExploreFeatures = ({ containerVariants, itemVariants }) => {
                       </div>
                     </div>
 
-                    {/* Hover Effect Overlay */}
                     <motion.div
                       className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-3xl`}
                       initial={false}
@@ -191,7 +184,6 @@ const ExploreFeatures = ({ containerVariants, itemVariants }) => {
           ))}
         </motion.div>
 
-        {/* Enhanced CTA Section */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
