@@ -8,7 +8,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-lg font-semibold mb-4">EduLearn Hub</h3>
+            <h3 className="text-lg font-semibold mb-4">Scientia</h3>
             <p className="text-gray-400 text-sm">
               Empowering students to achieve academic excellence through innovative learning solutions.
             </p>
@@ -38,7 +38,7 @@ const Footer = () => {
                 <svg className="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                info@edulearnhub.com
+                info@scientia.com
               </li>
               <li className="flex items-center">
                 <svg className="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -90,7 +90,7 @@ const Footer = () => {
         </div>
         <div className="mt-8 pt-8 border-t border-gray-700">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-gray-400">© 2025 EduLearn Hub. All rights reserved.</p>
+            <p className="text-sm text-gray-400">© 2025 Scientia. All rights reserved.</p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <motion.a 
                 href="#" 
